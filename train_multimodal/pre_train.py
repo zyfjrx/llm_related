@@ -1,4 +1,4 @@
-from speechbrain.inference import Pretrained
+
 from transformers import PreTrainedModel, PretrainedConfig, AutoTokenizer, AutoModelForCausalLM
 from PIL import Image
 import requests
