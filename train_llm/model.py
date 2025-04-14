@@ -7,7 +7,7 @@ from torch import nn
 from train_llm.LMConfig import LMConfig
 from transformers import PreTrainedModel, Trainer, DefaultDataCollator, AutoTokenizer, TrainingArguments
 from transformers.modeling_outputs import CausalLMOutputWithPast
-from dataset import PretrainDataset
+from train_llm.model.dataset import PretrainDataset
 
 
 

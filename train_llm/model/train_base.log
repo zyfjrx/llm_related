@@ -1,0 +1,69 @@
+nohup: ignoring input
+/home/bmh/project/llm_related/train_llm/model/mode_base.py:308: FutureWarning: `tokenizer` is deprecated and will be removed in version 5.0.0 for `Trainer.__init__`. Use `processing_class` instead.
+  trainer = Trainer(model=model, args=args, train_dataset=dataset, tokenizer=tokenizer, data_collator=data_collator)
+MiniMindLM(
+  (tok_embeddings): Embedding(6400, 512)
+  (dropout): Dropout(p=0.0, inplace=False)
+  (layers): ModuleList(
+    (0-7): 8 x LMBlock(
+      (attention): Attention(
+        (wq): Linear(in_features=512, out_features=512, bias=False)
+        (wk): Linear(in_features=512, out_features=128, bias=False)
+        (wv): Linear(in_features=512, out_features=128, bias=False)
+        (wo): Linear(in_features=512, out_features=512, bias=False)
+        (attn_dropout): Dropout(p=0.0, inplace=False)
+        (resid_dropout): Dropout(p=0.0, inplace=False)
+      )
+      (attention_norm): RMSNorm()
+      (ffn_norm): RMSNorm()
+      (feed_forward): FeedForward(
+        (w1): Linear(in_features=512, out_features=1408, bias=False)
+        (w2): Linear(in_features=1408, out_features=512, bias=False)
+        (w3): Linear(in_features=512, out_features=1408, bias=False)
+        (dropout): Dropout(p=0.0, inplace=False)
+      )
+    )
+  )
+  (norm): RMSNorm()
+  (output): Linear(in_features=512, out_features=6400, bias=False)
+)
+模型参数量为：25829888
+[1m[34mswanlab[0m[0m: \ Waiting for the swanlab cloud response.                                                                                                    [1m[34mswanlab[0m[0m: \ Getting project...[1m[34mswanlab[0m[0m: | Getting project...                                                                                                    [1m[34mswanlab[0m[0m: \ Creating experiment...                                                                                                    [1m[34mswanlab[0m[0m: Tracking run with swanlab version 0.5.5
+[1m[34mswanlab[0m[0m: Run data will be saved locally in [35m[1m/home/bmh/project/llm_related/train_llm/model/swanlog/run-20250414_181304-6c031199[0m[0m
+[1m[34mswanlab[0m[0m: 👋 Hi [1m[39maigc_zyf[0m[0m, welcome to swanlab!
+[1m[34mswanlab[0m[0m: Syncing run [33msave/pretrain/base[0m to the cloud
+[1m[34mswanlab[0m[0m: 🏠 View project at [34m[4mhttps://swanlab.cn/@aigc_zyf/model[0m[0m
+[1m[34mswanlab[0m[0m: 🚀 View run at [34m[4mhttps://swanlab.cn/@aigc_zyf/model/runs/8r0cksgk9a4hoyopmoowu[0m[0m
+  0%|          | 0/36800 [00:00<?, ?it/s]/home/bmh/project/llm_related/train_llm/model/dataset.py:47: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  X = torch.tensor(input_ids[:-1], dtype=torch.long)
+/home/bmh/project/llm_related/train_llm/model/dataset.py:47: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  X = torch.tensor(input_ids[:-1], dtype=torch.long)
+/home/bmh/project/llm_related/train_llm/model/dataset.py:47: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  X = torch.tensor(input_ids[:-1], dtype=torch.long)
+/home/bmh/project/llm_related/train_llm/model/dataset.py:47: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  X = torch.tensor(input_ids[:-1], dtype=torch.long)
+/home/bmh/project/llm_related/train_llm/model/dataset.py:48: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  Y = torch.tensor(input_ids[1:], dtype=torch.long)
+/home/bmh/project/llm_related/train_llm/model/dataset.py:48: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  Y = torch.tensor(input_ids[1:], dtype=torch.long)
+/home/bmh/project/llm_related/train_llm/model/dataset.py:48: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  Y = torch.tensor(input_ids[1:], dtype=torch.long)
+/home/bmh/project/llm_related/train_llm/model/dataset.py:48: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  Y = torch.tensor(input_ids[1:], dtype=torch.long)
+/home/bmh/project/llm_related/train_llm/model/dataset.py:47: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  X = torch.tensor(input_ids[:-1], dtype=torch.long)
+/home/bmh/project/llm_related/train_llm/model/dataset.py:48: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  Y = torch.tensor(input_ids[1:], dtype=torch.long)
+/home/bmh/project/llm_related/train_llm/model/dataset.py:47: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  X = torch.tensor(input_ids[:-1], dtype=torch.long)
+/home/bmh/project/llm_related/train_llm/model/dataset.py:47: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  X = torch.tensor(input_ids[:-1], dtype=torch.long)
+/home/bmh/project/llm_related/train_llm/model/dataset.py:48: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  Y = torch.tensor(input_ids[1:], dtype=torch.long)
+/home/bmh/project/llm_related/train_llm/model/dataset.py:48: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  Y = torch.tensor(input_ids[1:], dtype=torch.long)
+/home/bmh/project/llm_related/train_llm/model/dataset.py:47: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  X = torch.tensor(input_ids[:-1], dtype=torch.long)
+/home/bmh/project/llm_related/train_llm/model/dataset.py:48: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  Y = torch.tensor(input_ids[1:], dtype=torch.long)
+  0%|          | 1/36800 [00:02<23:34:41,  2.31s/it]  0%|          | 2/36800 [00:03<19:44:30,  1.93s/it]  0%|          | 3/36800 [00:05<18:31:08,  1.81s/it]  0%|          | 4/36800 [00:07<17:56:42,  1.76s/it]  0%|          | 5/36800 [00:08<17:37:54,  1.73s/it]  0%|          | 6/36800 [00:10<17:26:24,  1.71s/it]  0%|          | 7/36800 [00:12<17:19:14,  1.69s/it]  0%|          | 8/36800 [00:13<17:14:42,  1.69s/it]  0%|          | 9/36800 [00:15<17:11:50,  1.68s/it]  0%|          | 10/36800 [00:17<17:10:11,  1.68s/it]  0%|          | 11/36800 [00:19<17:08:26,  1.68s/it]  0%|          | 12/36800 [00:20<17:07:22,  1.68s/it]  0%|          | 13/36800 [00:22<17:06:40,  1.67s/it]

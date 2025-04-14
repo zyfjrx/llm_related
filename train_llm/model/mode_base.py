@@ -4,10 +4,10 @@ import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint
 from torch import nn
-from train_llm.LMConfig import LMConfig
 from transformers import PreTrainedModel, Trainer, DefaultDataCollator, AutoTokenizer, TrainingArguments
 from transformers.modeling_outputs import CausalLMOutputWithPast
-from train_llm.model.dataset import PretrainDataset
+from dataset import PretrainDataset
+from config import LMConfig
 
 
 # 归一化
@@ -92,6 +92,7 @@ class Attention(nn.Module):
 
     def forward(self,
                 x: torch.Tensor,
+                pos_cis: torch.Tensor,
                 past_key_value: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
                 use_cache=False):
         bsz, seq_len, dim = x.shape
@@ -100,10 +101,7 @@ class Attention(nn.Module):
         xk = xk.view(bsz, seq_len, self.n_local_kv_heads, self.head_dim)
         xv = xv.view(bsz, seq_len, self.n_local_kv_heads, self.head_dim)
 
-        poc_cis = precompute_freqs_cis(self.head_dim)
-        poc_cis = poc_cis[0:seq_len]
-
-        xq, xk = apply_rotary_emb(xq, xk, poc_cis)
+        xq, xk = apply_rotary_emb(xq, xk, pos_cis)
         # kv_cache实现
         if past_key_value is not None:
             xk = torch.cat([past_key_value[0], xk], dim=1)
@@ -151,123 +149,7 @@ class FeedForward(nn.Module):
         return self.dropout(self.w2(F.silu(self.w1(x)) * self.w3(x)))
 
 
-class MoEGate(nn.Module):
-    def __init__(self, config: LMConfig):
-        super().__init__()
-        self.config = config
-        self.top_k = config.num_experts_per_tok
-        self.n_routed_experts = config.n_routed_experts
-
-        self.scoring_func = config.scoring_func
-        self.alpha = config.aux_loss_alpha
-        self.seq_aux = config.seq_aux
-
-        self.norm_topk_prob = config.norm_topk_prob
-        self.gating_dim = config.dim
-        self.weight = nn.Parameter(torch.empty((self.n_routed_experts, self.gating_dim)))
-        self.reset_parameters()
-
-    def reset_parameters(self) -> None:
-        import torch.nn.init as init
-        init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-
-    def forward(self, hidden_states):
-        bsz, seq_len, h = hidden_states.shape
-        hidden_states = hidden_states.view(-1, h)
-        logits = F.linear(hidden_states, self.weight, None)
-        if self.scoring_func == 'softmax':
-            scores = logits.softmax(dim=-1)
-        else:
-            raise NotImplementedError(f'insupportable scoring function for MoE gating: {self.scoring_func}')
-
-        topk_weight, topk_idx = torch.topk(scores, k=self.top_k, dim=-1, sorted=False)
-
-        if self.top_k > 1 and self.norm_topk_prob:
-            denominator = topk_weight.sum(dim=-1, keepdim=True) + 1e-20
-            topk_weight = topk_weight / denominator
-
-        if self.training and self.alpha > 0.0:
-            scores_for_aux = scores
-            aux_topk = self.top_k
-            topk_idx_for_aux_loss = topk_idx.view(bsz, -1)
-            # 序列损失
-            if self.seq_aux:
-                scores_for_seq_aux = scores_for_aux.view(bsz, seq_len, -1)
-                ce = torch.zeros(bsz, self.n_routed_experts, device=hidden_states.device)
-                ce.scatter_add_(1, topk_idx_for_aux_loss,
-                                torch.ones(bsz, seq_len * aux_topk, device=hidden_states.device)).div_(
-                    seq_len * aux_topk / self.n_routed_experts)
-                aux_loss = (ce * scores_for_seq_aux.mean(dim=1)).sum(dim=1).mean() * self.alpha
-            else:
-                mask_ce = F.one_hot(topk_idx_for_aux_loss.view(-1), num_classes=self.n_routed_experts)
-                ce = mask_ce.float().mean(0)
-                Pi = scores_for_aux.mean(0)
-                fi = ce * self.n_routed_experts
-                aux_loss = (Pi * fi).sum() * self.alpha
-        else:
-            aux_loss = 0
-        return topk_idx, topk_weight, aux_loss
-
-
-class MOEFeedForward(nn.Module):
-    def __init__(self, config: LMConfig):
-        super().__init__()
-        self.config = config
-        self.experts = nn.ModuleList([
-            FeedForward(config)
-            for _ in range(config.n_routed_experts)
-        ])
-        self.gate = MoEGate(config)
-        if config.n_shared_experts is not None:
-            self.shared_experts = FeedForward(config)
-
-    def forward(self, x):
-        identity = x
-        orig_shape = x.shape
-        bsz, seq_len, _ = x.shape
-        # 使用门控机制选择专家
-        topk_idx, topk_weight, aux_loss = self.gate(x)
-        x = x.view(-1, x.shape[-1])
-        flat_topk_idx = topk_idx.view(-1)
-        if self.training:
-            x = x.repeat_interleave(self.config.num_experts_per_tok, dim=0)
-            y = torch.empty_like(x, dtype=torch.float16)
-            for i, expert in enumerate(self.experts):
-                y[flat_topk_idx == i] = expert(x[flat_topk_idx == i]).to(y.dtype)  # 确保类型一致
-            y = (y.view(*topk_weight.shape, -1) * topk_weight.unsqueeze(-1)).sum(dim=1)
-            y = y.view(*orig_shape)
-        else:
-            y = self.moe_infer(x, flat_topk_idx, topk_weight.view(-1, 1)).view(*orig_shape)
-        if self.config.n_shared_experts is not None:
-            y = y + self.shared_experts(identity)
-        self.aux_loss = aux_loss
-        return y
-
-    @torch.no_grad()
-    def moe_infer(self, x, flat_expert_indices, flat_expert_weights):
-        expert_cache = torch.zeros_like(x)
-        idxs = flat_expert_indices.argsort()
-        tokens_per_expert = flat_expert_indices.bincount().cpu().numpy().cumsum(0)
-        token_idxs = idxs // self.config.num_experts_per_tok
-        # 当tokens_per_expert = [6, 15, 20, 26]，tokens_per_expert.shape[0]即为专家数量（此时为4）
-        # 且token_idxs = [3, 7, 19, 21, 24, 25,  4,  5,  6, 10, 11, 12...] 时
-        # 意味token_idxs[:6] -> [3, 7, 19, 21, 24, 25]这6个位置属于专家0处理的token（每个token有可能被多个专家处理，这取决于num_experts_per_tok）
-        # 接下来9个位置token_idxs[6:15] -> [4,  5,  6, 10, 11, 12...]属于专家1处理的token...依此类推
-        for i, end_idx in enumerate(tokens_per_expert):
-            start_idx = 0 if i == 0 else tokens_per_expert[i - 1]
-            if start_idx == end_idx:
-                continue
-            expert = self.experts[i]
-            exp_token_idx = token_idxs[start_idx:end_idx]
-            expert_tokens = x[exp_token_idx]
-            expert_out = expert(expert_tokens).to(expert_cache.dtype)
-            expert_out.mul_(flat_expert_weights[idxs[start_idx:end_idx]])
-            expert_cache.scatter_add_(0, exp_token_idx.view(-1, 1).repeat(1, x.shape[-1]), expert_out)
-
-        return expert_cache
-
-
-class MiniMindBlock(nn.Module):
+class LMBlock(nn.Module):
     def __init__(self, layer_id: int, config: LMConfig):
         super().__init__()
         self.n_heads = config.n_heads
@@ -278,11 +160,12 @@ class MiniMindBlock(nn.Module):
         self.layer_id = layer_id
         self.attention_norm = RMSNorm(config.dim, eps=config.norm_eps)
         self.ffn_norm = RMSNorm(config.dim, eps=config.norm_eps)
-        self.feed_forward = FeedForward(config) if not config.use_moe else MOEFeedForward(config)
+        self.feed_forward = FeedForward(config)
 
-    def forward(self, x, past_key_value=None, use_cache=False):
+    def forward(self, x, pos_cis, past_key_value=None, use_cache=False):
         h_attn, past_kv = self.attention(
             self.attention_norm(x),
+            pos_cis,
             past_key_value=past_key_value,
             use_cache=use_cache
         )
@@ -293,20 +176,25 @@ class MiniMindBlock(nn.Module):
 
 class MiniMindLM(PreTrainedModel):
     config_class = LMConfig
+
     def __init__(self, params: LMConfig = None):
         self.params = params or LMConfig()
         super().__init__(self.params)
         self.vocab_size, self.n_layers = params.vocab_size, params.n_layers
         self.tok_embeddings = nn.Embedding(params.vocab_size, params.dim)
         self.dropout = nn.Dropout(params.dropout)
-        self.layers = nn.ModuleList([MiniMindBlock(l, params) for l in range(self.n_layers)])
+        self.layers = nn.ModuleList([LMBlock(l, params) for l in range(self.n_layers)])
         self.norm = RMSNorm(params.dim, eps=params.norm_eps)
         self.output = nn.Linear(params.dim, params.vocab_size, bias=False)
         self.tok_embeddings.weight = self.output.weight
+        self.register_buffer("pos_cis",
+                             precompute_freqs_cis(dim=params.dim // params.n_heads, theta=params.rope_theta),
+                             persistent=False)
         self.OUT = CausalLMOutputWithPast()
 
     def forward(self,
                 input_ids: Optional[torch.Tensor] = None,
+                labels: Optional[torch.Tensor] = None,
                 past_key_values: Optional[List[Tuple[torch.Tensor, torch.Tensor]]] = None,
                 use_cache: bool = False,
                 logits_to_keep: Union[int, torch.Tensor] = 0,
@@ -314,10 +202,11 @@ class MiniMindLM(PreTrainedModel):
         past_key_values = past_key_values or [None] * len(self.layers)
         start_pos = args.get('start_pos', 0)
         h = self.dropout(self.tok_embeddings(input_ids))
+        pos_cis = self.pos_cis[start_pos:start_pos + input_ids.size(1)]
         past_kvs = []
         for l, layer in enumerate(self.layers):
             h, past_kv = layer(
-                h,
+                h, pos_cis,
                 past_key_value=past_key_values[l],
                 use_cache=use_cache
             )
@@ -325,10 +214,13 @@ class MiniMindLM(PreTrainedModel):
 
         slice_indices = slice(-logits_to_keep, None) if isinstance(logits_to_keep, int) else logits_to_keep
         logits = self.output(self.norm(h)[:, slice_indices, :])
-        aux_loss = sum(l.feed_forward.aux_loss for l in self.layers if isinstance(l.feed_forward, MOEFeedForward))
+        if labels is not None:
+            loss = F.cross_entropy(logits.view(-1, logits.size(-1)), labels.view(-1), ignore_index=0)
+        else:
+            loss = None
         self.OUT.__setitem__('last_hidden_state', h)
         self.OUT.__setitem__('logits', logits)
-        self.OUT.__setitem__('aux_loss', aux_loss)
+        self.OUT.__setitem__('loss', loss)
         self.OUT.__setitem__('past_key_values', past_kvs)
         return self.OUT
 
@@ -390,29 +282,31 @@ class MiniMindLM(PreTrainedModel):
 
 if __name__ == '__main__':
     config = LMConfig()
-    model = MiniMindLM(config).to("mps")
+    model = MiniMindLM(config)
+    print(model)
     print(f'模型参数量为：{sum(p.numel() for p in model.parameters() if p.requires_grad)}')
 
     data_collator = DefaultDataCollator()
-    tokenizer = AutoTokenizer.from_pretrained("./tokenizer", use_fast=True)
-    args = TrainingArguments(output_dir='./moe',
+    tokenizer = AutoTokenizer.from_pretrained("../tokenizer", use_fast=True)
+    output_dir = 'save/pretrain/base'
+    args = TrainingArguments(output_dir=output_dir,
                              num_train_epochs=10,
                              do_train=True,
-                             per_device_train_batch_size=2,
-                             gradient_accumulation_steps=1,
-                             # max_steps=15000,
-                             logging_steps=1,
-                             save_total_limit=5,
+                             per_device_train_batch_size=48,
+                             gradient_accumulation_steps=8,
+                             logging_steps=100,
+                             save_steps=100,
+                             save_total_limit=2,
                              bf16=True,
                              learning_rate=2e-4,
                              lr_scheduler_type='cosine',
                              dataloader_num_workers=8,
                              dataloader_pin_memory=True,
-                             save_safetensors=False,
-                             use_mps_device=True)
-    dataset = PretrainDataset('data/test_pre.jsonl', tokenizer=tokenizer, max_length=512)
+                             save_safetensors=False
+                             )
+    dataset = PretrainDataset('../data/pretrain_hq.jsonl', tokenizer=tokenizer, max_length=512)
     trainer = Trainer(model=model, args=args, train_dataset=dataset, tokenizer=tokenizer, data_collator=data_collator)
     # 如果是初次训练resume_from_checkpoint为false，接着checkpoint继续训练，为True
     trainer.train(resume_from_checkpoint=False)
-    trainer.save_model('./saves/moe')
+    trainer.save_model(output_dir)
     trainer.save_state()
