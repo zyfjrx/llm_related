@@ -1,8 +1,6 @@
 import gradio as gr
-import json
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoProcessor, AutoConfig
-from PIL import Image
-from train import VLMConfig, VLM
+from train_multimodal.vlm_base.pre_train_bak import VLMConfig, VLM
 import torch
 from torch.nn import functional as F
 
