@@ -31,7 +31,7 @@ if __name__ == '__main__':
     args = TrainingArguments(
         output_dir=output_dir,
         do_train=True,
-        per_device_train_batch_size=4,
+        per_device_train_batch_size=1,
         learning_rate=1e-4,
         num_train_epochs=5,
         save_steps=100,

@@ -166,3 +166,11 @@ class PreDataset(Dataset):
             'labels': Y,
             'pixel_values': pixel_tensors
         }
+
+# if __name__ == '__main__':
+#     tokenizer = AutoTokenizer.from_pretrained("/home/bmh/project/model/Qwen/Qwen2.5-0.5B-Instruct")
+#     processor = CLIPProcessor.from_pretrained("/home/bmh/project/model/clip-vit-base-patch16")
+#     jsonl_path = "/home/bmh/project/llm_related/train_multimodal/data/test.json"
+#     image_input = "/home/bmh/project/llm_related/train_multimodal/data/test_image"
+#     ds = PreDataset(jsonl_path, image_input, tokenizer,preprocess=processor)
+#     print(ds[0])

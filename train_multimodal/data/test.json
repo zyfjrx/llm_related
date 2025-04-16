@@ -1,0 +1,44 @@
+[
+  {
+    "id": "GCC_train_000190697.jpg",
+    "image": "GCC_train_000190697.jpg",
+    "conversations": [
+      {
+        "from": "human",
+        "value": "提供给定图像的简要描述。\n<image>"
+      },
+      {
+        "from": "gpt",
+        "value": "橄榄油是自由使用的健康成分。"
+      }
+    ]
+  },
+  {
+    "id": "GCC_train_002429825",
+    "image": "GCC_train_002429825.jpg",
+    "conversations": [
+      {
+        "from": "human",
+        "value": "<image>\n写一篇简短但有益的图片摘要."
+      },
+      {
+        "from": "gpt",
+        "value": "随机旋转的薄金符号的3D向量豪华字母。"
+      }
+    ]
+  },
+  {
+    "id": "GCC_train_000190697",
+    "image": "GCC_train_000190697.jpg",
+    "conversations": [
+      {
+        "from": "human",
+        "value": "分享提供图像的简要解释。\n<image>"
+      },
+      {
+        "from": "gpt",
+        "value": "气候变化——岩石的物理和化学分解。"
+      }
+    ]
+  }
+  ]

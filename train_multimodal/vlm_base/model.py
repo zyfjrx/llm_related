@@ -1,4 +1,5 @@
 from torch import nn
+import torch.nn.functional as F
 import warnings
 from transformers import CLIPProcessor, CLIPModel, AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, \
     TrainingArguments, Trainer, DefaultDataCollator
@@ -17,12 +18,11 @@ class VisionProj(nn.Module):
         super().__init__()
         self.ve_dim = ve_dim
         self.lm_dim = lm_dim
-        self.vision_proj = nn.Sequential(
-            nn.Linear(self.ve_dim, self.lm_dim)
-        )
+        self.linear1 = nn.Linear(self.ve_dim, self.lm_dim)
+        self.linear2 = nn.Linear(self.lm_dim, self.lm_dim)
 
     def forward(self, image_encoders):
-        vision_proj = self.vision_proj(image_encoders)
+        vision_proj = self.linear2(F.silu(self.linear1(image_encoders)))
         return vision_proj
 
 class VLM(PreTrainedModel):
