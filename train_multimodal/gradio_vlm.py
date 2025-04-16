@@ -1,19 +1,23 @@
 import gradio as gr
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoProcessor, AutoConfig
-from train_multimodal.vlm_base.pre_train_bak import VLMConfig, VLM
+
 import torch
 from torch.nn import functional as F
+from transformers import CLIPProcessor
+from PIL import Image
+from VLMConfig import VLMConfig
+from train_multimodal.vlm_base.model import VLM
 
 device = "cuda"
-processor = AutoProcessor.from_pretrained("/home/bmh/project/model/siglip-so400m-patch14-384")
-tokenizer = AutoTokenizer.from_pretrained('/home/bmh/project/model/Qwen/Qwen2.5-0.5B-Instruct')
+tokenizer = AutoTokenizer.from_pretrained("/home/bmh/project/model/Qwen/Qwen2.5-0.5B-Instruct")
+processor = CLIPProcessor.from_pretrained("/home/bmh/project/model/clip-vit-base-patch16")
 AutoConfig.register("vlm_model", VLMConfig)
 AutoModelForCausalLM.register(VLMConfig, VLM)
 
-pretrain_model = AutoModelForCausalLM.from_pretrained('/home/bmh/project/llm_related/train_multimodal/save/pretrain')
+pretrain_model = AutoModelForCausalLM.from_pretrained('/home/bmh/project/llm_related/train_multimodal/vlm_base/save/pretrain')
 pretrain_model.to(device)
 
-sft_model = AutoModelForCausalLM.from_pretrained('/home/bmh/project/llm_related/train_multimodal/save/pretrain')
+sft_model = AutoModelForCausalLM.from_pretrained('/home/bmh/project/llm_related/train_multimodal/vlm_base/save/pretrain')
 sft_model.to(device)
 
 pretrain_model.eval()
@@ -21,15 +25,17 @@ sft_model.eval()
 
 
 def generate(mode, image_input, text_input, max_new_tokens=100, temperature=0.0, top_k=None):
-    q_text = tokenizer.apply_chat_template([{"role": "system", "content": 'You are a helpful assistant.'},
-                                            {"role": "user", "content": f'{text_input}\n<image>'}], \
-                                           tokenize=False, \
-                                           add_generation_prompt=True).replace('<image>', '<|image_pad|>' * 49)
+    q_text = tokenizer.apply_chat_template([{"role": "user", "content": f'{text_input}\n<image>'}],
+                                           tokenize=False,
+                                           add_generation_prompt=True).replace('<image>', '<|image_pad|>' * 196)
     input_ids = tokenizer(q_text, return_tensors='pt')['input_ids']
     input_ids = input_ids.to(device)
     # image = Image.open(image_input).convert("RGB")
-    pixel_values = processor(text=None, images=image_input).pixel_values
-    pixel_values = pixel_values.to(device)
+    image_tensors = []
+    image_tensor = processor(images=image_input, return_tensors='pt')['pixel_values']
+    image_tensors.append(image_tensor)
+    image_tensors = torch.stack(image_tensors, dim=0)
+    image_tensors = image_tensors.to(device)
     eos = tokenizer.eos_token_id
     s = input_ids.shape[1]
     while input_ids.shape[1] < s + max_new_tokens - 1:
@@ -37,7 +43,7 @@ def generate(mode, image_input, text_input, max_new_tokens=100, temperature=0.0,
             model = pretrain_model
         else:
             model = sft_model
-        inference_res = model(input_ids, None, pixel_values)
+        inference_res = model(input_ids, None, image_tensors)
         logits = inference_res.logits
         logits = logits[:, -1, :]
 

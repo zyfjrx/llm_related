@@ -2,7 +2,7 @@ import warnings
 from transformers import CLIPProcessor, CLIPModel, AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, \
     TrainingArguments, Trainer, DefaultDataCollator
 from VLMConfig import VLMConfig
-from dataset import VLMDataset
+from dataset import PreDataset
 from model import VLM
 import os
 import swanlab
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     trainer = Trainer(
         model=model,
         args=args,
-        train_dataset=VLMDataset(jsonl_path=data_path, images_path=images_path, tokenizer=tokenizer,
+        train_dataset=PreDataset(jsonl_path=data_path, images_path=images_path, tokenizer=tokenizer,
                                  preprocess=processor),
         data_collator=data_collator,
     )
