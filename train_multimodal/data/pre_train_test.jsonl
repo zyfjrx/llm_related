@@ -1,4 +1,4 @@
-{"conversations": [{"role": "user", "content": "提供给定图像的简要描述。\n<image>"}, {"role": "assistant", "content": "橄榄油是自由使用的健康成分。"}], "image": "GCC_train_002582585.jpg"}
+{"conversations": [{"role": "user", "content": "提供给定图像的简要描述。\n<image>"}, {"role": "assistant", "content": "橄榄油是自由使用的健康成分。"}], "image": "GCC_train_00258258588.jpg"}
 {"conversations": [{"role": "user", "content": "<image>\n写一篇简短但有益的图片摘要."}, {"role": "assistant", "content": "随机旋转的薄金符号的3D向量豪华字母。"}], "image": "GCC_train_002429825.jpg"}
 {"conversations": [{"role": "user", "content": "分享提供图像的简要解释。\n<image>"}, {"role": "assistant", "content": "气候变化——岩石的物理和化学分解。"}], "image": "GCC_train_000190697.jpg"}
 {"conversations": [{"role": "user", "content": "简要, 清晰地说明所显示的图片.\n<image>"}, {"role": "assistant", "content": "球迷在比赛的第八局击球时,因运动队得分的次数而干扰球的次数"}], "image": "GCC_train_002503829.jpg"}

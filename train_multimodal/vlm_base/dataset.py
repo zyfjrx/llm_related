@@ -46,8 +46,8 @@ class SFTDataset(Dataset):
             add_generation_prompt=False
         )
 
-    def _generate_loss_mask(self, input_ids):
-        loss_mask = [0] * len(input_ids)
+    def _generate_labels_mask(self, input_ids):
+        loss_mask = [tokenizer.pad_token_id] * len(input_ids)
         i = 0
         while i < len(input_ids):
             if input_ids[i:i + len(self.bos_id)] == self.bos_id:
@@ -58,40 +58,45 @@ class SFTDataset(Dataset):
                         break
                     end += 1
                 for j in range(start + 1, min(end + len(self.eos_id) + 1, self.max_length)):
-                    loss_mask[j] = 1
+                    loss_mask[j] = input_ids[j]
                 i = end + len(self.eos_id) if end < len(input_ids) else len(input_ids)
             else:
                 i += 1
         return loss_mask
 
     def __getitem__(self, index: int):
-        sample = self.samples[index]
-        image_paths = sample['image']
-        prompt = self._create_chat_prompt(sample['conversations'])
-        input_ids = self.tokenizer(prompt).input_ids[:self.max_length]
-        input_ids += [self.tokenizer.pad_token_id] * (self.max_length - len(input_ids))
-        loss_mask = self._generate_loss_mask(input_ids)
+        try:
+            sample = self.samples[index]
+            image_name = sample['image']
+            image_name = image_name.strip()
+            image = Image.open(f'{self.images_path}/{image_name}')
+            prompt = self._create_chat_prompt(sample['conversations'])
+            input_ids = self.tokenizer(prompt).input_ids[:self.max_length]
+            input_ids += [self.tokenizer.pad_token_id] * (self.max_length - len(input_ids))
+            Y = self._generate_labels_mask(input_ids)[1:]
+            X = torch.tensor(input_ids[:-1], dtype=torch.long)
+            pixel_tensors = self.preprocess(images=image)['pixel_values']
+        except:
 
-        X = torch.tensor(input_ids[:-1], dtype=torch.long)
-        Y = torch.tensor(input_ids[1:], dtype=torch.long)
-        loss_mask = torch.tensor(loss_mask[1:], dtype=torch.long)
-
-        image_tensors = []
-        for image_name in image_paths.split(','):
-            try:
-                image_name = image_name.strip()
-                image = Image.open(f'{self.images_path}/{image_name}')
-            except:
-                image = Image.new('RGB', (224, 224), color='white')
-            image_tensor = self.preprocess(images=image, return_tensors='pt')['pixel_values']
-            image_tensors.append(image_tensor)
-        image_tensors = torch.stack(image_tensors, dim=0)
-
+            messages = [
+                {"role": "user", "content": "图片内容是什么\n<image>"},
+                {"role": "assistant", "content": '图片内容为空！'},
+            ]
+            prompt = self.tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=False
+            ).replace('<image>', self.image_token)
+            input_ids = self.tokenizer(prompt).input_ids[:self.max_length]
+            input_ids += [self.tokenizer.pad_token_id] * (self.max_length - len(input_ids))
+            Y = self._generate_labels_mask(input_ids)[1:]
+            X = torch.tensor(input_ids[:-1], dtype=torch.long)
+            image = Image.new('RGB', (224, 224), color='white')
+            pixel_tensors = self.preprocess(images=image)['pixel_values']
         return {
             'input_ids': X,
             'labels': Y,
-            'attention_mask': loss_mask,
-            'pixel_tensors': image_tensors
+            'pixel_values': pixel_tensors
         }
 
 
@@ -169,8 +174,9 @@ class PreDataset(Dataset):
 
 # if __name__ == '__main__':
 #     tokenizer = AutoTokenizer.from_pretrained("/home/bmh/project/model/Qwen/Qwen2.5-0.5B-Instruct")
-#     processor = CLIPProcessor.from_pretrained("/home/bmh/project/model/clip-vit-base-patch16")
-#     jsonl_path = "/home/bmh/project/llm_related/train_multimodal/data/test.json"
+#     processor = AutoProcessor.from_pretrained("/home/bmh/project/model/clip-vit-base-patch16")
+#     jsonl_path = "/home/bmh/project/llm_related/train_multimodal/data/sft_test_data.jsonl"
 #     image_input = "/home/bmh/project/llm_related/train_multimodal/data/test_image"
-#     ds = PreDataset(jsonl_path, image_input, tokenizer,preprocess=processor)
-#     print(ds[0])
+#     ds = SFTDataset(jsonl_path, image_input, tokenizer,preprocess=processor)
+#     print(tokenizer.decode(ds[0]["input_ids"]))
+#     print(tokenizer.decode(ds[0]["labels"]))

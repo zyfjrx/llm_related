@@ -13,7 +13,7 @@ swanlab.init(
   # 设置将记录此次运行的项目信息
   project="train_vlm",
   workspace="aigc_zyf",
-  experiment_name="pre_train_vlm",
+  experiment_name="sft_train_vlm",
 )
 warnings.filterwarnings('ignore')
 
