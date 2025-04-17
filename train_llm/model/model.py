@@ -1,18 +1,16 @@
 import math
-from typing import List, Optional, Tuple, Union
+from config import LMConfig
+from typing import Any, Optional, Tuple, List, Union
 import torch
 import torch.nn.functional as F
-import torch.utils.checkpoint
 from torch import nn
-from train_llm.LMConfig import LMConfig
-from transformers import PreTrainedModel, Trainer, DefaultDataCollator, AutoTokenizer, TrainingArguments
+from transformers import PreTrainedModel, DefaultDataCollator, AutoTokenizer, TrainingArguments, Trainer
 from transformers.modeling_outputs import CausalLMOutputWithPast
-from train_llm.model.dataset import PretrainDataset
+from dataset import PretrainDataset
 
 
-# 归一化
-class RMSNorm(nn.Module):
-    def __init__(self, dim: int, eps=1e-6):
+class RMSNorm(torch.nn.Module):
+    def __init__(self, dim: int, eps: float = 1e-6):
         super().__init__()
         self.eps = eps
         self.weight = nn.Parameter(torch.ones(dim))
@@ -20,24 +18,19 @@ class RMSNorm(nn.Module):
     def _norm(self, x):
         return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x):
         return self.weight * self._norm(x.float()).type_as(x)
 
 
-# 旋转矩阵
-def precompute_freqs_cis(dim: int, seq_len: int = (32 * 1024), theta: float = 10000.0):
-    freqs = 1.0 / (theta ** (torch.arange(0, dim, 2)[:(dim // 2)].float() / dim))
-    t = torch.arange(seq_len, device=freqs.device)
-    freqs = torch.outer(t, freqs)
-    freqs_cis = torch.polar(torch.ones_like(freqs), freqs)
-    return freqs_cis
+def precompute_pos_cis(dim: int, end: int = int(32 * 1024), theta: float = 1e6):
+    freqs = 1.0 / (theta ** (torch.arange(0, dim, 2)[: (dim // 2)].float() / dim))
+    t = torch.arange(end, device=freqs.device)  # type: ignore
+    freqs = torch.outer(t, freqs).float()  # type: ignore
+    pos_cis = torch.polar(torch.ones_like(freqs), freqs)  # complex64
+    return pos_cis
 
 
-def apply_rotary_emb(
-        xq: torch.Tensor,
-        xk: torch.Tensor,
-        freqs_cis: torch.Tensor,
-):
+def apply_rotary_emb(xq, xk, pos_cis):
     def unite_shape(pos_cis, x):
         ndim = x.ndim
         assert 0 <= 1 < ndim
@@ -45,19 +38,16 @@ def apply_rotary_emb(
         shape = [d if i == 1 or i == ndim - 1 else 1 for i, d in enumerate(x.shape)]
         return pos_cis.view(*shape)
 
-    xq_ = xq.float().reshape(*xq.shape[:-1], -1, 2)
-    xk_ = xk.float().reshape(*xk.shape[:-1], -1, 2)
-
-    xq_ = torch.view_as_complex(xq_)
-    xk_ = torch.view_as_complex(xk_)
-    freqs_cis = unite_shape(freqs_cis, xq_)
-    xq_out = torch.view_as_real(xq_ * freqs_cis).flatten(3)
-    xk_out = torch.view_as_real(xk_ * freqs_cis).flatten(3)
-
+    xq_ = torch.view_as_complex(xq.float().reshape(*xq.shape[:-1], -1, 2))
+    xk_ = torch.view_as_complex(xk.float().reshape(*xk.shape[:-1], -1, 2))
+    pos_cis = unite_shape(pos_cis, xq_)
+    xq_out = torch.view_as_real(xq_ * pos_cis).flatten(3)
+    xk_out = torch.view_as_real(xk_ * pos_cis).flatten(3)
     return xq_out.type_as(xq), xk_out.type_as(xk)
 
 
 def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """torch.repeat_interleave(x, dim=2, repeats=n_rep)"""
     bs, slen, n_kv_heads, head_dim = x.shape
     if n_rep == 1:
         return x
@@ -92,18 +82,16 @@ class Attention(nn.Module):
 
     def forward(self,
                 x: torch.Tensor,
+                pos_cis: torch.Tensor,
                 past_key_value: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
                 use_cache=False):
-        bsz, seq_len, dim = x.shape
+        bsz, seq_len, _ = x.shape
         xq, xk, xv = self.wq(x), self.wk(x), self.wv(x)
         xq = xq.view(bsz, seq_len, self.n_local_heads, self.head_dim)
         xk = xk.view(bsz, seq_len, self.n_local_kv_heads, self.head_dim)
         xv = xv.view(bsz, seq_len, self.n_local_kv_heads, self.head_dim)
 
-        poc_cis = precompute_freqs_cis(self.head_dim)
-        poc_cis = poc_cis[0:seq_len]
-
-        xq, xk = apply_rotary_emb(xq, xk, poc_cis)
+        xq, xk = apply_rotary_emb(xq, xk, pos_cis)
         # kv_cache实现
         if past_key_value is not None:
             xk = torch.cat([past_key_value[0], xk], dim=1)
@@ -190,7 +178,6 @@ class MoEGate(nn.Module):
             scores_for_aux = scores
             aux_topk = self.top_k
             topk_idx_for_aux_loss = topk_idx.view(bsz, -1)
-            # 序列损失
             if self.seq_aux:
                 scores_for_seq_aux = scores_for_aux.view(bsz, seq_len, -1)
                 ce = torch.zeros(bsz, self.n_routed_experts, device=hidden_states.device)
@@ -280,9 +267,10 @@ class MiniMindBlock(nn.Module):
         self.ffn_norm = RMSNorm(config.dim, eps=config.norm_eps)
         self.feed_forward = FeedForward(config) if not config.use_moe else MOEFeedForward(config)
 
-    def forward(self, x, past_key_value=None, use_cache=False):
+    def forward(self, x, pos_cis, past_key_value=None, use_cache=False):
         h_attn, past_kv = self.attention(
             self.attention_norm(x),
+            pos_cis,
             past_key_value=past_key_value,
             use_cache=use_cache
         )
@@ -293,6 +281,7 @@ class MiniMindBlock(nn.Module):
 
 class MiniMindLM(PreTrainedModel):
     config_class = LMConfig
+
     def __init__(self, params: LMConfig = None):
         self.params = params or LMConfig()
         super().__init__(self.params)
@@ -303,32 +292,42 @@ class MiniMindLM(PreTrainedModel):
         self.norm = RMSNorm(params.dim, eps=params.norm_eps)
         self.output = nn.Linear(params.dim, params.vocab_size, bias=False)
         self.tok_embeddings.weight = self.output.weight
+        self.register_buffer("pos_cis",
+                             precompute_pos_cis(dim=params.dim // params.n_heads, theta=params.rope_theta),
+                             persistent=False)
         self.OUT = CausalLMOutputWithPast()
 
     def forward(self,
                 input_ids: Optional[torch.Tensor] = None,
+                labels: Optional[torch.Tensor] = None,
                 past_key_values: Optional[List[Tuple[torch.Tensor, torch.Tensor]]] = None,
                 use_cache: bool = False,
                 logits_to_keep: Union[int, torch.Tensor] = 0,
                 **args):
         past_key_values = past_key_values or [None] * len(self.layers)
         start_pos = args.get('start_pos', 0)
-        h = self.dropout(self.tok_embeddings(input_ids))
+        hidden_states = self.dropout(self.tok_embeddings(input_ids))
+        pos_cis = self.pos_cis[start_pos:start_pos + input_ids.size(1)]
         past_kvs = []
         for l, layer in enumerate(self.layers):
-            h, past_kv = layer(
-                h,
+            hidden_states, past_kv = layer(
+                hidden_states, pos_cis,
                 past_key_value=past_key_values[l],
                 use_cache=use_cache
             )
             past_kvs.append(past_kv)
 
         slice_indices = slice(-logits_to_keep, None) if isinstance(logits_to_keep, int) else logits_to_keep
-        logits = self.output(self.norm(h)[:, slice_indices, :])
+        logits = self.output(self.norm(hidden_states)[:, slice_indices, :])
         aux_loss = sum(l.feed_forward.aux_loss for l in self.layers if isinstance(l.feed_forward, MOEFeedForward))
-        self.OUT.__setitem__('last_hidden_state', h)
+        if labels is not None:
+            loss = F.cross_entropy(logits.view(-1, logits.size(-1)), labels.view(-1), ignore_index=0)
+            loss += aux_loss
+        else:
+            loss = None
+        self.OUT.__setitem__('last_hidden_state', hidden_states)
         self.OUT.__setitem__('logits', logits)
-        self.OUT.__setitem__('aux_loss', aux_loss)
+        self.OUT.__setitem__('loss', loss)
         self.OUT.__setitem__('past_key_values', past_kvs)
         return self.OUT
 
@@ -386,33 +385,3 @@ class MiniMindLM(PreTrainedModel):
             yield input_ids[:, start:]
             if input_ids_next.item() == eos_token_id:
                 break
-
-
-if __name__ == '__main__':
-    config = LMConfig()
-    model = MiniMindLM(config).to("mps")
-    print(f'模型参数量为：{sum(p.numel() for p in model.parameters() if p.requires_grad)}')
-
-    data_collator = DefaultDataCollator()
-    tokenizer = AutoTokenizer.from_pretrained("./tokenizer", use_fast=True)
-    args = TrainingArguments(output_dir='./moe',
-                             num_train_epochs=10,
-                             do_train=True,
-                             per_device_train_batch_size=2,
-                             gradient_accumulation_steps=1,
-                             # max_steps=15000,
-                             logging_steps=1,
-                             save_total_limit=5,
-                             bf16=True,
-                             learning_rate=2e-4,
-                             lr_scheduler_type='cosine',
-                             dataloader_num_workers=8,
-                             dataloader_pin_memory=True,
-                             save_safetensors=False,
-                             use_mps_device=True)
-    dataset = PretrainDataset('data/test_pre.jsonl', tokenizer=tokenizer, max_length=512)
-    trainer = Trainer(model=model, args=args, train_dataset=dataset, tokenizer=tokenizer, data_collator=data_collator)
-    # 如果是初次训练resume_from_checkpoint为false，接着checkpoint继续训练，为True
-    trainer.train(resume_from_checkpoint=False)
-    trainer.save_model('./saves/moe')
-    trainer.save_state()
