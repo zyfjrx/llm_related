@@ -12,8 +12,8 @@ if __name__ == '__main__':
     print(model)
     print(f'模型参数量为：{sum(p.numel() for p in model.parameters() if p.requires_grad)}')
     data_collator = DefaultDataCollator()
-    tokenizer = AutoTokenizer.from_pretrained("../tokenizer", use_fast=True)
-    output_dir = 'save/pretrain/moe_model'
+    tokenizer = AutoTokenizer.from_pretrained("model/tokenizer", use_fast=True)
+    output_dir = 'model/save/pretrain/moe_model'
     args = TrainingArguments(output_dir=output_dir,
                              num_train_epochs=10,
                              do_train=True,

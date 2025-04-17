@@ -1,12 +1,12 @@
 import math
-from config import LMConfig
+from .config import LMConfig
 from typing import Any, Optional, Tuple, List, Union
 import torch
 import torch.nn.functional as F
 from torch import nn
 from transformers import PreTrainedModel, DefaultDataCollator, AutoTokenizer, TrainingArguments, Trainer
 from transformers.modeling_outputs import CausalLMOutputWithPast
-from dataset import PretrainDataset
+from .dataset import PretrainDataset
 
 
 class RMSNorm(torch.nn.Module):

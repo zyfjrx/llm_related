@@ -288,7 +288,7 @@ if __name__ == '__main__':
 
     data_collator = DefaultDataCollator()
     tokenizer = AutoTokenizer.from_pretrained("../tokenizer", use_fast=True)
-    output_dir = 'save/pretrain/base'
+    output_dir = '../save/pretrain/base'
     args = TrainingArguments(output_dir=output_dir,
                              num_train_epochs=10,
                              do_train=True,

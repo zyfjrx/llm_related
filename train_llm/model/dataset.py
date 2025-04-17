@@ -122,6 +122,6 @@ class SFTDataset(Dataset):
 
 if __name__ == '__main__':
     data_path = "/home/bmh/project/llm_related/train_llm/data/sft_mini_test.jsonl"
-    tokenizer = AutoTokenizer.from_pretrained('/home/bmh/project/llm_related/train_llm/tokenizer')
+    tokenizer = AutoTokenizer.from_pretrained('/train_llm/model/tokenizer')
     ds = SFTDataset(data_path, tokenizer)
     print(ds[0])
