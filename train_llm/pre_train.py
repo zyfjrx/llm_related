@@ -1,13 +1,13 @@
-from config import LMConfig
-from model import MiniMindLM
+from model.config import LMConfig
+from model.model import MiniMindLM
 from transformers import DefaultDataCollator, AutoTokenizer, TrainingArguments, Trainer
 import warnings
-from dataset import PretrainDataset
+from model.dataset import PretrainDataset
 warnings.filterwarnings('ignore')
 
 
 if __name__ == '__main__':
-    config = LMConfig(use_moe=False)
+    config = LMConfig(use_moe=True,dim=640)
     model = MiniMindLM(config)
     print(model)
     print(f'模型参数量为：{sum(p.numel() for p in model.parameters() if p.requires_grad)}')
