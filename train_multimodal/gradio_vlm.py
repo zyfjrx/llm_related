@@ -4,9 +4,9 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, AutoProcessor, Aut
 import torch
 from torch.nn import functional as F
 from transformers import CLIPProcessor
-from PIL import Image
-from VLMConfig import VLMConfig
-from train_multimodal.vlm_base.model import VLM
+
+from vlm_base.VLMConfig import VLMConfig
+from vlm_base.model import VLM
 
 device = "cuda"
 tokenizer = AutoTokenizer.from_pretrained("/home/bmh/project/model/Qwen/Qwen2.5-0.5B-Instruct")
@@ -14,10 +14,10 @@ processor = CLIPProcessor.from_pretrained("/home/bmh/project/model/clip-vit-base
 AutoConfig.register("vlm_model", VLMConfig)
 AutoModelForCausalLM.register(VLMConfig, VLM)
 
-pretrain_model = AutoModelForCausalLM.from_pretrained('/home/bmh/project/llm_related/train_multimodal/vlm_base/save/pretrain')
+pretrain_model = AutoModelForCausalLM.from_pretrained('/home/bmh/project/llm_related/train_multimodal/vlm_base/save/pretrain/checkpoint-2700')
 pretrain_model.to(device)
 
-sft_model = AutoModelForCausalLM.from_pretrained('/home/bmh/project/llm_related/train_multimodal/vlm_base/save/pretrain')
+sft_model = AutoModelForCausalLM.from_pretrained('/home/bmh/project/llm_related/train_multimodal/vlm_base/save/pretrain/checkpoint-2700')
 sft_model.to(device)
 
 pretrain_model.eval()

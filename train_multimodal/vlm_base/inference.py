@@ -1,6 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoProcessor, AutoConfig
 from PIL import Image
-from model import VLMConfig, VLM
+from VLMConfig import VLMConfig
+from model import VLM
 from transformers import CLIPProcessor
 import torch
 from torch.nn import functional as F
@@ -58,7 +59,7 @@ def generate(model, tokenizer, processor, image_input, text_input, max_new_token
 
 if __name__ == '__main__':
     conf = VLMConfig()
-    model_path = "/home/bmh/project/llm_related/train_multimodal/vlm_base/save/pretrain/checkpoint-2600"
+    model_path = "/home/bmh/project/llm_related/train_multimodal/vlm_base/save/pretrain/checkpoint-850"
     model, processor, tokenizer = init_model(conf, model_path)
     image_input = "/home/bmh/project/llm_related/train_multimodal/data/test_image/GCC_train_000190697.jpg"
     image = Image.open(image_input).convert("RGB")

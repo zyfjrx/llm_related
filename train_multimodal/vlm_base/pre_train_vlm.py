@@ -31,10 +31,10 @@ if __name__ == '__main__':
     args = TrainingArguments(
         output_dir=output_dir,
         do_train=True,
-        per_device_train_batch_size=2,
+        per_device_train_batch_size=4,
         learning_rate=1e-4,
-        num_train_epochs=5,
-        save_steps=100,
+        num_train_epochs=1,
+        save_steps=10,
         save_total_limit=2,
         fp16=True,
         gradient_accumulation_steps=8,

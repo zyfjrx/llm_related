@@ -16,10 +16,11 @@ def init_model(args):
     if args.load == 0:
         moe_path = '_moe' if args.use_moe else ''
         modes = {0: 'pretrain', 1: 'full_sft', 2: 'rlhf', 3: 'reason', 4: 'grpo'}
-        model_path = f'./{args.out_dir}/{modes[args.model_mode]}/{args.model_name}'
+        # model_path = f'/home/bmh/project/llm_related/train_llm/model/{args.out_dir}/{modes[args.model_mode]}/{args.model_name}'
         AutoConfig.register("minimind", LMConfig)
         AutoModelForCausalLM.register(LMConfig, MiniMindLM)
-        model = AutoModelForCausalLM.from_pretrained(model_path)
+        model = AutoModelForCausalLM.from_pretrained("/home/bmh/project/llm_related/train_llm/model/save/sft/full-sft/epoch1")
+        # model = AutoModelForCausalLM.from_pretrained(model_path)
     else:
         transformers_model_path = './MiniMind2'
         tokenizer = AutoTokenizer.from_pretrained(transformers_model_path)
@@ -96,7 +97,7 @@ def main():
     parser.add_argument('--temperature', default=0.85, type=float)
     parser.add_argument('--top_p', default=0.85, type=float)
     parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu', type=str)
-    parser.add_argument('--model_name', default='minimind_base_pre' , type=str)
+    parser.add_argument('--model_name', default='minimind_base_sft' , type=str)
 
     # 此处max_seq_len（最大允许输入长度）并不意味模型具有对应的长文本的性能，仅防止QA出现被截断的问题
     # MiniMind2-moe (145M)：(dim=640, n_layers=8, use_moe=True)
@@ -112,7 +113,7 @@ def main():
     parser.add_argument('--history_cnt', default=0, type=int)
     parser.add_argument('--stream', default=True, type=bool)
     parser.add_argument('--load', default=0, type=int, help="0: 原生torch权重，1: transformers加载")
-    parser.add_argument('--model_mode', default=0, type=int,
+    parser.add_argument('--model_mode', default=1, type=int,
                         help="0: 预训练模型，1: SFT-Chat模型，2: RLHF-Chat模型，3: Reason模型，4: RLAIF-Chat模型")
     args = parser.parse_args()
 

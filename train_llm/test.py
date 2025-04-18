@@ -3,11 +3,11 @@ import torch
 from model.model import MiniMindLM
 from model.config import LMConfig
 
-tokenizer = AutoTokenizer.from_pretrained('/home/bmh/project/llm_related/train_llm/model/save/full_sft/minimind_base_sft')
+tokenizer = AutoTokenizer.from_pretrained('/home/bmh/project/llm_related/train_llm/model/save/sft/full-sft/epoch1')
 AutoConfig.register("minimind", LMConfig)
 AutoModelForCausalLM.register(LMConfig, MiniMindLM)
 
-model = AutoModelForCausalLM.from_pretrained('/home/bmh/project/llm_related/train_llm/model/save/full_sft/minimind_base_sft')
+model = AutoModelForCausalLM.from_pretrained('/home/bmh/project/llm_related/train_llm/model/save/sft/full-sft/epoch1')
 
 # input_data = [tokenizer.bos_token_id] + tokenizer.encode('1+1等于多少')
 # input_ids = torch.tensor(input_data).unsqueeze(0)

@@ -158,25 +158,24 @@ class DPODataset(Dataset):
         )
 
         chosen_input_ids = chosen_encoding['input_ids']
-        chosen_loss_mask = self._generate_loss_mask(chosen_input_ids)
+        chosen_labels_mask = self._generate_loss_mask(chosen_input_ids)
 
         rejected_input_ids = rejected_encoding['input_ids']
-        rejected_loss_mask = self._generate_loss_mask(rejected_input_ids)
-        x_chosen = torch.tensor(chosen_input_ids[:-1], dtype=torch.long)
-        y_chosen = torch.tensor(chosen_input_ids[1:], dtype=torch.long)
-        mask_chosen = torch.tensor(chosen_loss_mask[1:], dtype=torch.long)
-        x_rejected = torch.tensor(rejected_input_ids[:-1], dtype=torch.long)
-        y_rejected = torch.tensor(rejected_input_ids[1:], dtype=torch.long)
-        mask_rejected = torch.tensor(rejected_loss_mask[1:], dtype=torch.long)
+        rejected_labels_mask = self._generate_loss_mask(rejected_input_ids)
 
-        return {
-            'x_chosen': x_chosen,
-            'y_chosen': y_chosen,
-            'mask_chosen': mask_chosen,
-            'x_rejected': x_rejected,
-            'y_rejected': y_rejected,
-            'mask_rejected': mask_rejected
-        }
+        # x_chosen = torch.tensor(chosen_input_ids[:-1], dtype=torch.long)
+        # y_chosen = torch.tensor(chosen_input_ids[1:], dtype=torch.long)
+        # mask_chosen = torch.tensor(chosen_loss_mask[1:], dtype=torch.long)
+        # x_rejected = torch.tensor(rejected_input_ids[:-1], dtype=torch.long)
+        # y_rejected = torch.tensor(rejected_input_ids[1:], dtype=torch.long)
+        # mask_rejected = torch.tensor(rejected_loss_mask[1:], dtype=torch.long)
+        # return {
+        #     'chosen_input_ids': chosen_input_ids,
+        #     'rejected_input_ids': rejected_input_ids,
+        #     'chosen_labels_mask': chosen_labels_mask,
+        #     'rejected_labels_mask': rejected_labels_mask
+        # }
+        return [chosen_input_ids, rejected_input_ids, chosen_labels_mask, rejected_labels_mask]
 
     def _generate_loss_mask(self, input_ids):
         loss_mask = [0] * len(input_ids)
@@ -190,15 +189,36 @@ class DPODataset(Dataset):
                         break
                     end += 1
                 for j in range(start + 1, min(end + len(self.eos_id) + 1, self.max_length)):
-                    loss_mask[j] = 1
+                    loss_mask[j] = input_ids[j]
                 i = end + len(self.eos_id) if end < len(input_ids) else len(input_ids)
             else:
                 i += 1
         return loss_mask
 
 
-if __name__ == '__main__':
-    data_path = "/home/bmh/project/llm_related/train_llm/data/dpo/dpo_test.jsonl"
-    tokenizer = AutoTokenizer.from_pretrained('/home/bmh/project/llm_related/train_llm/model/tokenizer')
-    ds = DPODataset(data_path, tokenizer)
-    print(ds[0])
+class DPODataCollator:
+    def __init__(self, tokenizer):
+        self.tokenizer = tokenizer
+
+    def __call__(self, features):
+        inputs_ids = []
+        labels = []
+
+        for feature in features:
+            inputs_ids.append(feature[0])
+            labels.append(feature[2])
+        for feature in features:
+            inputs_ids.append(feature[1])
+            labels.append(feature[3])
+
+        return {
+            "input_ids": torch.tensor(inputs_ids),
+            "labels": torch.tensor(labels)
+        }
+
+
+# if __name__ == '__main__':
+#     data_path = "/home/bmh/project/llm_related/train_llm/data/dpo/dpo_test.jsonl"
+#     tokenizer = AutoTokenizer.from_pretrained('/home/bmh/project/llm_related/train_llm/model/tokenizer')
+#     ds = DPODataset(data_path, tokenizer)
+#     print(ds[0]["chosen_input_ids"])

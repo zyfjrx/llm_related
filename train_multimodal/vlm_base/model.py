@@ -1,16 +1,12 @@
 from torch import nn
 import torch.nn.functional as F
 import warnings
-from transformers import CLIPProcessor, CLIPModel, AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, \
-    TrainingArguments, Trainer, DefaultDataCollator
+from transformers import CLIPProcessor, CLIPModel, AutoModelForCausalLM, AutoTokenizer, PreTrainedModel
 import torch
 from transformers.modeling_outputs import CausalLMOutputWithPast
-from VLMConfig import VLMConfig
-import swanlab
-import os
-
+import VLMConfig
 warnings.filterwarnings('ignore')
-swanlab.login(os.getenv("SWANLAB_KEY"), save=True)
+
 
 
 class VisionProj(nn.Module):
