@@ -5,7 +5,7 @@ from transformers import AutoProcessor, AutoModel, AutoModelForCausalLM, AutoTok
     TrainingArguments, Trainer, DefaultDataCollator
 import torch
 from transformers.modeling_outputs import CausalLMOutputWithPast
-from VLMConfig import VLMConfig
+from config import VLMConfig
 import swanlab
 import os
 

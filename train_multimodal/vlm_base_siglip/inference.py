@@ -1,33 +1,35 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoProcessor, AutoConfig
 from PIL import Image
-from VLMConfig import VLMConfig
-from model import VLM
-from transformers import CLIPProcessor
+
+from train_multimodal.vlm_base_siglip.model import VLM
+from config import VLMConfig
 import torch
 from torch.nn import functional as F
 
 
-def init_model(conf: VLMConfig, model_path):
-    device = "cuda"
-    tokenizer = AutoTokenizer.from_pretrained("/home/bmh/project/model/Qwen/Qwen2.5-0.5B-Instruct")
-    processor = CLIPProcessor.from_pretrained("/home/bmh/project/model/clip-vit-base-patch16")
+def init_model():
+    device = "mps"
+    tokenizer = AutoTokenizer.from_pretrained("/Users/zhangyf/llm/Qwen2.5-0.5B-Instruct")
+    processor = AutoProcessor.from_pretrained("/Users/zhangyf/llm/siglip-base-patch16-224")
     AutoConfig.register("vlm_model", VLMConfig)
     AutoModelForCausalLM.register(VLMConfig, VLM)
-    model = AutoModelForCausalLM.from_pretrained(model_path)
-    model.to(device)
-    model.eval()
-    return model, processor, tokenizer
+
+    pretrain_model = AutoModelForCausalLM.from_pretrained(
+        '/Users/zhangyf/PycharmProjects/train/llm_related/train_multimodal/vlm_base_siglip/save')
+    pretrain_model.to(device)
+    pretrain_model.eval()
+    return pretrain_model, processor, tokenizer
 
 
 def generate(model, tokenizer, processor, image_input, text_input, max_new_tokens=200, temperature=0.0, top_k=None,
-             device="cuda"):
+             device="mps"):
     q_text = tokenizer.apply_chat_template([{"role": "system", "content": 'You are a helpful assistant.'},
                                             {"role": "user", "content": f'{text_input}\n<image>'}], \
                                            tokenize=False, \
                                            add_generation_prompt=True).replace('<image>', '<|image_pad|>' * 49)
     input_ids = tokenizer(q_text, return_tensors='pt')['input_ids']
     input_ids = input_ids.to(device)
-    pixel_values = processor(text=None, images=image_input, return_tensors="pt").pixel_values
+    pixel_values = processor(images=image_input).pixel_values
     pixel_values = pixel_values.to(device)
     eos = tokenizer.eos_token_id
     s = input_ids.shape[1]
@@ -59,9 +61,10 @@ def generate(model, tokenizer, processor, image_input, text_input, max_new_token
 
 if __name__ == '__main__':
     conf = VLMConfig()
-    model_path = "/home/bmh/project/llm_related/train_multimodal/vlm_base/save/pretrain/checkpoint-850"
-    model, processor, tokenizer = init_model(conf, model_path)
-    image_input = "/home/bmh/project/llm_related/train_multimodal/data/test_image/GCC_train_000190697.jpg"
+    model, processor, tokenizer = init_model()
+    print(model)
+
+    image_input = "/Users/zhangyf/Documents/WechatIMG443.jpg"
     image = Image.open(image_input).convert("RGB")
     text = "描述下这个图片"
     out = generate(model, tokenizer, processor, image, text)

@@ -1,11 +1,11 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoProcessor, AutoConfig
 from PIL import Image
-from VLMConfig import VLMConfig
-from train_multimodal.vlm_base.model import VLM
+from vlm_base_siglip.config import VLMConfig
+from train_multimodal.vlm_base_clip.model import VLM
 from transformers import CLIPProcessor,CLIPModel,AutoModelForCausalLM
 import torch
 
-device = "cuda"
+device = "mps"
 tokenizer = AutoTokenizer.from_pretrained("/home/bmh/project/model/Qwen/Qwen2.5-0.5B-Instruct")
 processor = CLIPProcessor.from_pretrained("/home/bmh/project/model/clip-vit-base-patch16")
 AutoConfig.register("vlm_model", VLMConfig)

@@ -5,8 +5,8 @@ import torch
 from torch.nn import functional as F
 from transformers import CLIPProcessor
 
-from vlm_base.VLMConfig import VLMConfig
-from vlm_base.model import VLM
+from vlm_base_clip.config import VLMConfig
+from vlm_base_clip.model import VLM
 
 device = "cuda"
 tokenizer = AutoTokenizer.from_pretrained("/home/bmh/project/model/Qwen/Qwen2.5-0.5B-Instruct")

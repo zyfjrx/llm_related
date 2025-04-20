@@ -4,7 +4,7 @@ import warnings
 from transformers import CLIPProcessor, CLIPModel, AutoModelForCausalLM, AutoTokenizer, PreTrainedModel
 import torch
 from transformers.modeling_outputs import CausalLMOutputWithPast
-import VLMConfig
+from config import VLMConfig
 warnings.filterwarnings('ignore')
 
 
@@ -40,7 +40,7 @@ class VLM(PreTrainedModel):
 
     def forward(self, input_ids, labels, pixel_values, attention_mask=None):
         text_embeds = self.llm_model.get_input_embeddings()(input_ids)
-        pixel_values = pixel_values.squeeze(1)
+        # pixel_values = pixel_values.squeeze(1)
         image_embeds = self.vision_model.vision_model(pixel_values).last_hidden_state[:, 1:, :]
         b, s, d = image_embeds.shape
         image_embeds = image_embeds.view(b, -1, d * 4)  # (b, 196, d) --> (b, 49, d*4) 压缩图片tokens

@@ -47,7 +47,7 @@ class SFTDataset(Dataset):
         )
 
     def _generate_labels_mask(self, input_ids):
-        loss_mask = [tokenizer.pad_token_id] * len(input_ids)
+        loss_mask = [self.tokenizer.pad_token_id] * len(input_ids)
         i = 0
         while i < len(input_ids):
             if input_ids[i:i + len(self.bos_id)] == self.bos_id:
