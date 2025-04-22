@@ -8,8 +8,8 @@ class VLMConfig(PretrainedConfig):
     def __init__(self,
                  image_special_token: str = '<|image_pad|>' * 49,
                  image_ids: List = [151655] * 49,
-                 llm_model_path = "/Users/zhangyf/llm/Qwen2.5-0.5B-Instruct",
-                 vision_model_path = "/Users/zhangyf/llm/siglip-base-patch16-224",
+                 llm_model_path = "/home/bmh/project/llm_related/train_multimodal/llm_model/Qwen2.5-0.5B-Instruct",
+                 vision_model_path = "/home/bmh/project/llm_related/train_multimodal/vision_model/siglip2-base-patch16-224",
                  freeze_vision_model=True,
                    **kwargs):
         self.image_special_token = image_special_token

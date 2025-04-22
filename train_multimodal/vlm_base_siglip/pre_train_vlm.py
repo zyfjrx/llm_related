@@ -21,12 +21,12 @@ if __name__ == '__main__':
     model = VLM(config).cuda()
     print(model)
     print(f'模型参数量为：{sum(p.numel() for p in model.parameters() if p.requires_grad)}')
-    images_path = '/root/autodl-tmp/vlm/data/images/pretrain_images'
-    data_path = '/root/autodl-tmp/vlm/data/pretrain_data.jsonl'
+    images_path = '/train_multimodal/data/pretrain/pretrain_vlm_data.jsonl'
+    data_path = '/home/bmh/project/llm_related/train_multimodal/data/pretrain_images'
     tokenizer = AutoTokenizer.from_pretrained(config.llm_model_path)
     processor = AutoProcessor.from_pretrained(config.vision_model_path)
     data_collator = DefaultDataCollator()
-    output_dir = 'save/pretrain2'
+    output_dir = 'save/pretrain'
     args = TrainingArguments(
         output_dir=output_dir,
         do_train=True,

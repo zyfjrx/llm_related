@@ -9,13 +9,13 @@ from torch.nn import functional as F
 
 def init_model():
     device = "mps"
-    tokenizer = AutoTokenizer.from_pretrained("/Users/zhangyf/llm/Qwen2.5-0.5B-Instruct")
-    processor = AutoProcessor.from_pretrained("/Users/zhangyf/llm/siglip-base-patch16-224")
+    tokenizer = AutoTokenizer.from_pretrained("/home/bmh/project/llm_related/train_multimodal/llm_model/Qwen2.5-0.5B-Instruct")
+    processor = AutoProcessor.from_pretrained("/home/bmh/project/llm_related/train_multimodal/vision_model/siglip2-base-patch16-224")
     AutoConfig.register("vlm_model", VLMConfig)
     AutoModelForCausalLM.register(VLMConfig, VLM)
 
     pretrain_model = AutoModelForCausalLM.from_pretrained(
-        '/Users/zhangyf/PycharmProjects/train/llm_related/train_multimodal/vlm_base_siglip/save')
+        '/home/bmh/project/llm_related/train_multimodal/vlm_base/save/pretrain/checkpoint-860')
     pretrain_model.to(device)
     pretrain_model.eval()
     return pretrain_model, processor, tokenizer
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     model, processor, tokenizer = init_model()
     print(model)
 
-    image_input = "/Users/zhangyf/Documents/WechatIMG443.jpg"
+    image_input = "/home/bmh/project/llm_related/train_multimodal/data/test_image/GCC_train_000190697.jpg"
     image = Image.open(image_input).convert("RGB")
     text = "描述下这个图片"
     out = generate(model, tokenizer, processor, image, text)

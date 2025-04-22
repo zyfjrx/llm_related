@@ -23,7 +23,7 @@ if __name__ == '__main__':
     print(model)
     print(f'模型参数量为：{sum(p.numel() for p in model.parameters() if p.requires_grad)}')
     images_path = '/home/bmh/project/llm_related/train_multimodal/data/pretrain_images'
-    data_path = '/home/bmh/project/llm_related/train_multimodal/data/pretrain_vlm_data.jsonl'
+    data_path = '/train_multimodal/data/pretrain/pretrain_vlm_data.jsonl'
     tokenizer = AutoTokenizer.from_pretrained(config.llm_model_path)
     processor = CLIPProcessor.from_pretrained(config.vision_model_path)
     data_collator = DefaultDataCollator()
