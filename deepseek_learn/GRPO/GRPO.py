@@ -131,7 +131,7 @@ training_args = GRPOConfig(
     log_on_each_node=False,
     use_vllm=False,
     report_to="none",
-    save_total_limit=10
+    save_total_limit=2
 )
 
 model = AutoModelForCausalLM.from_pretrained(
