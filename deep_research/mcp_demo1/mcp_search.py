@@ -137,7 +137,7 @@ def web_search(query: str, top_k: int = 2, categories: str = 'general') -> str:
     for result in results[:top_k]:
         links.append(result['url' if categories == 'general' else 'img_src' if categories == 'images' else ''])
 
-    return links
+    return results
 
 
 def fetch_webpage_text(url):
@@ -275,8 +275,10 @@ def get_images(query: str) -> str:
 
 
 if __name__ == "__main__":
-    mcp.run()
-    # out = generate_query("mcp是什么")
-    # print(out)
+    # mcp.run()
+    # # out = generate_query("mcp是什么")
+    # # print(out)
+    result = web_search("小米汽车")
+    print(result)
 
 
