@@ -200,6 +200,7 @@ class MCPClient:
             tools=tools,
             tool_choice="none"
         )
+        print(f"planning_messages:{planning_messages}")
 
         # 提取出模型返回的 JSON 内容
         content = response.choices[0].message.content.strip()
@@ -212,6 +213,7 @@ class MCPClient:
         # 在解析 JSON 之后返回调用计划
         try:
             plan = json.loads(json_text)
+            print(f"工具调用原始返回: {plan}")
             return plan if isinstance(plan, list) else []
         except Exception as e:
             print(f"❌ 工具调用链规划失败: {e}\n原始返回: {content}")
