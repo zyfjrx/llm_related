@@ -36,16 +36,39 @@ ax[0,2].plot(X, y,c='y')
 trainX, testX, trainY, testY = train_test_split(X, y, test_size=0.2, random_state=42)
 
 
-# 过拟合
-X_train1 = polynomial(trainX, 20)
-X_test1 = polynomial(testX, 20)
+#
+X_train = polynomial(trainX, 20)
+X_test = polynomial(testX, 20)
 model = LinearRegression()
-model.fit(X_train1, trainY)
-y_pred1 = model.predict(X_test1)
-test_loss3 = mean_squared_error(testY, y_pred1)
-train_loss3 = mean_squared_error(trainY, model.predict(X_train1))
+model.fit(X_train, trainY)
+y_pred1 = model.predict(X_test)
+test_loss1 = mean_squared_error(testY, y_pred1)
 # 画出拟合曲线，并标出误差
 ax[0,0].plot(X, model.predict(polynomial(X, 20)), 'r')
-ax[0,0].text(-3, 1, f"测试集均方误差：{test_loss3:.4f}")
-ax[0,0].text(-3, 1.3, f"训练集均方误差：{train_loss3:.4f}")
+ax[0,0].text(-3, 1, f"测试集均方误差：{test_loss1:.4f}")
+ax[1,0].bar(np.arange(20), model.coef_.reshape(-1),color='b')
+
+
+# L1正则化 Lasso回归
+ridge = Lasso(alpha=0.01)
+
+ridge.fit(X_train, trainY)
+y_pred2 = ridge.predict(X_test)
+test_loss2 = mean_squared_error(testY, y_pred2)
+ax[0,1].plot(X, ridge.predict(polynomial(X, 20)), 'r')
+ax[0,1].text(-3, 1, f"测试集均方误差：{test_loss2:.4f}")
+ax[0,1].text(-3, 1.3, "Lasso回归")
+ax[1,1].bar(np.arange(20), ridge.coef_.reshape(-1), color='b')
+
+
+# L2正则化 Lasso回归
+ridge = Ridge(alpha=1)
+
+ridge.fit(X_train, trainY)
+y_pred3 = ridge.predict(X_test)
+test_loss3 = mean_squared_error(testY, y_pred3)
+ax[0,2].plot(X, ridge.predict(polynomial(X, 20)), 'r')
+ax[0,2].text(-3, 1, f"测试集均方误差：{test_loss3:.4f}")
+ax[0,2].text(-3, 1.3, "Ridge回归")
+ax[1,2].bar(np.arange(20), ridge.coef_.reshape(-1), color='b')
 plt.show()
