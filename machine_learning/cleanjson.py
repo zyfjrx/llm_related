@@ -17,7 +17,7 @@ def replace_optimized_thought(json_data):
 
 
 # 处理JSON数据
-with open("/Users/zhangyf/Documents/宠物数据/datasets/Food & Diet/datasets-4_AjgzGtdvgO-alpaca-2025-05-26.json", "r", encoding="utf-8") as f:
+with open("/Users/zhangyf/Documents/宠物数据/datasets/Food_Diet/datasets-4_AjgzGtdvgO-alpaca-2025-05-27.json", "r", encoding="utf-8") as f:
     json_data = json.load(f)
 processed_data = replace_optimized_thought(json_data)
 
