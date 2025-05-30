@@ -1,11 +1,11 @@
-from model.config import LMConfig
-from model.model import MiniMindLM
+from train_llm.v1.model.config import LMConfig
+from train_llm.v1.model.model import MiniMindLM
 from transformers import DefaultDataCollator, AutoTokenizer, TrainingArguments, Trainer
 import warnings
 import torch
 import swanlab
 import os
-from model.dataset import SFTDataset
+from train_llm.v1.model.dataset import SFTDataset
 warnings.filterwarnings('ignore')
 key = os.getenv("SWANLAB_KEY")
 swanlab.login(api_key=key, save=True)
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     print(model)
     print(f'模型参数量为：{sum(p.numel() for p in model.parameters() if p.requires_grad)}')
     data_collator = DefaultDataCollator()
-    output_dir = 'model/save/sft/full-sft/epoch1'
+    output_dir = 'v1/model/save/sft/full-sft/epoch1'
     args = TrainingArguments(output_dir=output_dir,
                              num_train_epochs=1,
                              do_train=True,

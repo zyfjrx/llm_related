@@ -1,9 +1,9 @@
-from model.config import LMConfig
-from model.model import MiniMindLM
-from transformers import DefaultDataCollator, AutoTokenizer, TrainingArguments, Trainer,AutoConfig,AutoModelForCausalLM
+from train_llm.v1.model.config import LMConfig
+from train_llm.v1.model.model import MiniMindLM
+from transformers import AutoTokenizer, TrainingArguments, Trainer,AutoConfig,AutoModelForCausalLM
 import warnings
 import torch
-from model.dataset import DPODataset,DPODataCollator
+from train_llm.v1.model.dataset import DPODataset,DPODataCollator
 from torch.nn import functional as F
 import os
 import swanlab
@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
 
     tokenizer = AutoTokenizer.from_pretrained("/home/bmh/project/llm_related/train_llm/model/tokenizer", use_fast=True)
-    output_dir = 'model/save/dpo/dpo_model'
+    output_dir = 'v1/model/save/dpo/dpo_model'
     args = TrainingArguments(output_dir=output_dir,
                              num_train_epochs=1,
                              do_train=True,

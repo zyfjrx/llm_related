@@ -1,12 +1,11 @@
 import argparse
 import random
-import time
 import numpy as np
 import torch
 import warnings
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
-from model.model import MiniMindLM
-from model.config import LMConfig
+from train_llm.v1.model.model import MiniMindLM
+from train_llm.v1.model.config import LMConfig
 
 warnings.filterwarnings('ignore')
 

@@ -1,7 +1,5 @@
 import argparse
 import json
-import os
-import sys
 import time
 import torch
 import warnings
@@ -10,8 +8,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
-from train_llm.model.config import LMConfig
-from train_llm.model.model import MiniMindLM
+from train_llm.v1.model.config import LMConfig
+from train_llm.v1.model.model import MiniMindLM
 
 
 warnings.filterwarnings('ignore')

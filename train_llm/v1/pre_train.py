@@ -1,10 +1,10 @@
 import os
 import swanlab
-from model.config import LMConfig
-from model.model import MiniMindLM
+from train_llm.v1.model.config import LMConfig
+from train_llm.v1.model.model import MiniMindLM
 from transformers import DefaultDataCollator, AutoTokenizer, TrainingArguments, Trainer
 import warnings
-from model.dataset import PretrainDataset
+from train_llm.v1.model.dataset import PretrainDataset
 warnings.filterwarnings('ignore')
 key = os.getenv("SWANLAB_KEY")
 swanlab.login(api_key=key, save=True)
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     print(f'模型参数量为：{sum(p.numel() for p in model.parameters() if p.requires_grad)}')
     data_collator = DefaultDataCollator()
     tokenizer = AutoTokenizer.from_pretrained("model/tokenizer", use_fast=True)
-    output_dir = 'model/save/pretrain/moe_epoch10'
+    output_dir = 'v1/model/save/pretrain/moe_epoch10'
     args = TrainingArguments(output_dir=output_dir,
                              num_train_epochs=10,
                              do_train=True,

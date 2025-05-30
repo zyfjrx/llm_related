@@ -1,8 +1,8 @@
 import gradio as gr
-from transformers import AutoTokenizer, AutoModelForCausalLM, AutoProcessor, AutoConfig
+from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
 import torch
-from model.config import LMConfig
-from model.model import MiniMindLM
+from train_llm.v1.model.config import LMConfig
+from train_llm.v1.model.model import MiniMindLM
 
 device = "cuda"
 AutoConfig.register("minimind", LMConfig)
