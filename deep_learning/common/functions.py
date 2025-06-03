@@ -56,14 +56,27 @@ def mean_squared_error(y_true, y_pred):
 
 # 交叉商损失
 def cross_entropy_error(y_pred, y_true):
-    if y_true.ndim == 1:
-        y_pred = y_pred.reshape(1, -1)
-        y_true = y_true.reshape(1, -1)
+    if y_pred.ndim == 1:
+        y_pred = y_pred.reshape(1, y_pred.size)
+        y_true = y_true.reshape(1, y_true.size)
     if y_true.size == y_pred.size:
         y_true = y_true.argmax(axis=1)
 
     n = y_pred.shape[0]
-    return -np.sum(np.log(y_pred[np.arange(n), y_true] + 1e-9))
+    return -np.sum(np.log(y_pred[np.arange(n), y_true] + 1e-7)) / n
+# # 2. 交叉熵误差
+# def cross_entropy_error(y, t):
+#     # 对于一维情况，直接转换为二维
+#     if y.ndim == 1:
+#         y = y.reshape(1, y.size)
+#         t = t.reshape(1, t.size)
+#
+#     # t 是独热编码表示，转换为正确类别标签的索引
+#     if t.size == y.size:
+#         t = t.argmax(axis=1)
+#
+#     n = y.shape[0]
+#     return -np.sum(np.log(y[np.arange(n), t] + 1e-7)) / n
 
 
 if __name__ == '__main__':
@@ -83,7 +96,7 @@ if __name__ == '__main__':
     ])
     for i , y in enumerate(y2):
         print(i, y)
-    # loss = cross_entropy_error(x2, y2)
-    # print(loss)
+    loss = cross_entropy_error(x1, y1)
+    print(loss)
     # print(softmax(X))
     # print(x.argmax())
