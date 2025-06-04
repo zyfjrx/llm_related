@@ -3,7 +3,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from common.functions import sigmoid,softmax,cross_entropy_error
-
+import numpy as np
 
 # ReLU
 class ReLU:
@@ -72,6 +72,7 @@ class SoftmaxWithLoss:
         self.t = t
         self.y = softmax(X)
         self.loss = cross_entropy_error(self.y, self.t)
+        return self.loss
 
     def backward(self, dout=1):
         batch_size = self.t.shape[0]
