@@ -94,9 +94,11 @@ if __name__ == '__main__':
         [0, 0, 1],  # 第2行
         [1, 0, 0]  # 第2行
     ])
-    for i , y in enumerate(y2):
-        print(i, y)
-    loss = cross_entropy_error(x1, y1)
-    print(loss)
+    out = sigmoid(y2)
+    print(out)
+    # for i , y in enumerate(y2):
+    #     print(i, y)
+    # loss = cross_entropy_error(x1, y1)
+    # print(loss)
     # print(softmax(X))
     # print(x.argmax())
