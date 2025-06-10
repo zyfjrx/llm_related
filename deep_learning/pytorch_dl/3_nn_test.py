@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+from torchsummary import summary
 
 class Model(nn.Module):
     def __init__(self):
@@ -33,3 +33,6 @@ for name, param in model.named_parameters():
 
 # 使用state_dict()查看各层参数
 print("模型参数：\n", model.state_dict())
+
+# 统计信息
+summary(model,input_size=(3,),batch_size=20,device="cpu")
