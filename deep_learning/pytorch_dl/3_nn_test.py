@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from torchsummary import summary
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 class Model(nn.Module):
     def __init__(self):
         super(Model,self).__init__()
@@ -20,8 +22,8 @@ class Model(nn.Module):
         x = torch.softmax(x, dim=1)
         return x
 
-x = torch.randn(10,3).to("cuda")
-model = Model().to("cuda")
+x = torch.randn(10,3).to(device)
+model = Model().to(device)
 out = model(x)
 print(out)
 print(out.shape)
@@ -35,4 +37,4 @@ for name, param in model.named_parameters():
 print("模型参数：\n", model.state_dict())
 
 # 统计信息
-summary(model,input_size=(3,),batch_size=20,device="cuda")
+summary(model,input_size=(3,),batch_size=20,device=device)
