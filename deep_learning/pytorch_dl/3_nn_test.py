@@ -20,8 +20,8 @@ class Model(nn.Module):
         x = torch.softmax(x, dim=1)
         return x
 
-x = torch.randn(10,3)
-model = Model()
+x = torch.randn(10,3).to("cuda")
+model = Model().to("cuda")
 out = model(x)
 print(out)
 print(out.shape)
@@ -35,4 +35,4 @@ for name, param in model.named_parameters():
 print("模型参数：\n", model.state_dict())
 
 # 统计信息
-summary(model,input_size=(3,),batch_size=20,device="cpu")
+summary(model,input_size=(3,),batch_size=20,device="cuda")
