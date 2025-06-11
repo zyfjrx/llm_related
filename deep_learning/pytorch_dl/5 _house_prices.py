@@ -65,7 +65,7 @@ def create_dataset():
 
 
 train_dataset, test_dataset, features = create_dataset()
-print(features)
+# print(features)
 
 # 搭建模型
 model = nn.Sequential(
