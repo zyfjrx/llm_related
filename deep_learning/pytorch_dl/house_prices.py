@@ -88,42 +88,42 @@ def log_rmse(pred, target):
 
 
 def train(model, train_dataset, test_dataset, lr, epochs,batch_size,device):
+    # linear权重初始化
     def init_weights(layer):
-        if type(layer) == nn.Linear:
-            nn.init.kaiming_normal_(layer.weight)
+        if isinstance(layer, nn.Linear):
+            torch.nn.init.kaiming_normal_(layer.weight)
     model.apply(init_weights)
-    model = model.to(device)
+    model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
     train_loss_list = []
     test_loss_list = []
     for epoch in range(epochs):
         model.train()
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        train_loss = 0
-        for batch_count,(X,y) in enumerate(train_loader):
-            X,y = X.to(device), y.to(device)
+        train_total_loss = 0
+        for batch_idx, (X, target) in enumerate(train_loader):
+            X,target = X.to(device), target.to(device)
             output = model(X)
-            loss_value = log_rmse(output, y)
+            loss_value = log_rmse(output, target)
             loss_value.backward()
             optimizer.step()
             optimizer.zero_grad()
-            train_loss += loss_value.item()
-        # 每轮（epoch）训练结束，计算平均训练误差
-        train_loss_avg = train_loss/len(train_loader)
+            train_total_loss += loss_value.item()
+        train_loss_avg = train_total_loss/len(train_loader)
         train_loss_list.append(train_loss_avg)
 
-        # 验证过程
+        # 验证
         model.eval()
-        test_loss_total = 0
         test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+        test_total_loss = 0
         with torch.no_grad():
-            for batch_count, (X,y) in enumerate(test_loader):
-                X, y = X.to(device), y.to(device)
+            for batch_idx, (X, target) in enumerate(test_loader):
+                X, target = X.to(device), target.to(device)
                 output = model(X)
-                loss_value = log_rmse(output, y)
-                test_loss_total += loss_value.item()
-            # 每轮（epoch）训练结束，计算平均训练误差
-            test_loss_avg = test_loss_total / len(test_loader)
+                loss_value = log_rmse(output, target)
+                test_total_loss += loss_value.item()
+            test_loss_avg = test_total_loss/len(test_loader)
             test_loss_list.append(test_loss_avg)
         # 打印输出
         print(f"train loss: {train_loss_avg:.6f}, test loss: {test_loss_avg:.6f}")
@@ -132,8 +132,9 @@ def train(model, train_dataset, test_dataset, lr, epochs,batch_size,device):
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 train_loss_list,test_loss_list = train(model,train_dataset,test_dataset,lr=0.1,epochs=200,batch_size=64,device=device)
 
-# 画图
+
 plt.plot(train_loss_list, 'r-', label='train loss', linewidth=3)
 plt.plot(test_loss_list, 'k--', label='test loss', linewidth=2)
 plt.legend(loc='best')
 plt.show()
+
