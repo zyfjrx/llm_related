@@ -102,7 +102,7 @@ def train(model, train_dataset, test_dataset, lr, epochs,batch_size,device):
         model.train()
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         train_total_loss = 0
-        for batch_idx, (X, target) in enumerate(train_loader):
+        for X, target in train_loader:
             X,target = X.to(device), target.to(device)
             output = model(X)
             loss_value = log_rmse(output, target)
@@ -118,7 +118,7 @@ def train(model, train_dataset, test_dataset, lr, epochs,batch_size,device):
         test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
         test_total_loss = 0
         with torch.no_grad():
-            for batch_idx, (X, target) in enumerate(test_loader):
+            for X, target in test_loader:
                 X, target = X.to(device), target.to(device)
                 output = model(X)
                 loss_value = log_rmse(output, target)

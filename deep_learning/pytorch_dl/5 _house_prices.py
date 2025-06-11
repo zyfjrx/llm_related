@@ -100,7 +100,7 @@ def train(model, train_dataset, test_dataset, lr, epochs,batch_size,device):
         model.train()
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         train_loss = 0
-        for batch_count,(X,y) in enumerate(train_loader):
+        for X,y in train_loader:
             X,y = X.to(device), y.to(device)
             output = model(X)
             loss_value = log_rmse(output, y)
@@ -117,7 +117,7 @@ def train(model, train_dataset, test_dataset, lr, epochs,batch_size,device):
         test_loss_total = 0
         test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
         with torch.no_grad():
-            for batch_count, (X,y) in enumerate(test_loader):
+            for X,y in test_loader:
                 X, y = X.to(device), y.to(device)
                 output = model(X)
                 loss_value = log_rmse(output, y)
@@ -135,5 +135,6 @@ train_loss_list,test_loss_list = train(model,train_dataset,test_dataset,lr=0.1,e
 # 画图
 plt.plot(train_loss_list, 'r-', label='train loss', linewidth=3)
 plt.plot(test_loss_list, 'k--', label='test loss', linewidth=2)
+plt.axhline(0, color='gray', linestyle='--')
 plt.legend(loc='best')
 plt.show()
