@@ -10,7 +10,7 @@ from common.functions import sigmoid,identity,softmax
 
 # 读取数据
 def get_data():
-    data = pd.read_csv('../data/train.csv')
+    data = pd.read_csv('../pytorch_dl/data/train.csv')
     X = data.drop(columns=['label'],axis=1)
     y = data['label']
     x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
@@ -20,7 +20,7 @@ def get_data():
     return  x_test, y_test
 
 def init_network():
-    network = joblib.load('../data/nn_sample')
+    network = joblib.load('../pytorch_dl/data/nn_sample')
     return network
 
 def forward(network, x):
