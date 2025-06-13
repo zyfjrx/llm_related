@@ -66,11 +66,11 @@ def train(model, train_dataset, test_dataset, lr, epochs, batch_size, device):
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
-            train_total_loss += loss.item()
+            train_total_loss += loss.item() * X.shape[0]
             pred = output.argmax(dim=1)
             train_correct_count += pred.eq(y).sum().item()
 
-        train_avg_loss = train_total_loss / len(train_loader)
+        train_avg_loss = train_total_loss / len(train_dataset)
         train_acc = train_correct_count / len(train_dataset)
         train_loss_list.append(train_avg_loss)
         train_acc_list.append(train_acc)
@@ -90,8 +90,11 @@ def train(model, train_dataset, test_dataset, lr, epochs, batch_size, device):
     return train_loss_list, train_acc_list, test_acc_list
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-train_loss_list, train_acc_list, test_acc_list = train(model, train_dataset, test_dataset, lr=0.01, epochs=20, batch_size=256, device=device)
+train_loss_list, train_acc_list, test_acc_list = train(model, train_dataset, test_dataset, lr=0.01, epochs=40, batch_size=256, device=device)
 
+# # torch.save(model.state_dict(), "fashion_classification_model.pt")
+# model.load_state_dict(torch.load("fashion_classification_model.pt",map_location=device))
+# model.to(device)
 # 选取一个测试数据进行验证
 fig, ax = plt.subplots(1,2,figsize=(10,5))
 ax[0].imshow(X_test[666, 0, :, :, ], cmap="gray")
@@ -105,5 +108,5 @@ print("真实分类标签：",y_test[666])
 # 模型预测结果
 output = model(X_test[666].unsqueeze(0).to(device))
 y_pred = output.argmax(dim=1)
-print("模型预测分类标签：",y_pred)
+print("模型预测分类标签：",y_pred.item())
 
