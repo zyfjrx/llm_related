@@ -17,7 +17,8 @@ y_test = torch.tensor(fashion_mnist_test.iloc[:, 0].values, dtype=torch.int64).r
 train_dataset = TensorDataset(X_train, y_train)
 test_dataset = TensorDataset(X_test, y_test)
 # print(len(train_dataset))
-print(X_test[666].shape)
+# print(X_test[666].shape)
+
 # 搭建模型
 model = nn.Sequential(
     nn.Conv2d(1, 6, 5, 1, 2),
@@ -88,7 +89,7 @@ def train(model, train_dataset, test_dataset, lr, epochs, batch_size, device):
         print(f"epoch: {epoch+1},train loss: {train_avg_loss:.6f}, train acc: {train_acc:.6f}, test acc: {test_acc:.6f}")
     return train_loss_list, train_acc_list, test_acc_list
 
-device = torch.device("mps" if torch.mps.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 train_loss_list, train_acc_list, test_acc_list = train(model, train_dataset, test_dataset, lr=0.01, epochs=20, batch_size=256, device=device)
 
 # 选取一个测试数据进行验证
