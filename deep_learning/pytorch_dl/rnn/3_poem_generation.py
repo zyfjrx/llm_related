@@ -21,6 +21,10 @@ def process_poems(file_path):
         sequences.append(seq)
     return sequences,word2idx,vocab
 sequences,word2idx,vocab = process_poems('../data/poems.txt')
+print(len(sequences))
+print(len(word2idx))
+print(len(vocab))
+
 class PoemDataset(Dataset):
     def __init__(self, sequences, seq_len):
         self.seq_len = seq_len
@@ -35,7 +39,7 @@ class PoemDataset(Dataset):
         x = torch.LongTensor(self.data[idx][0])
         y = torch.LongTensor(self.data[idx][1])
         return x, y
-dataset = PoemDataset(sequences,24)
+dataset = PoemDataset(sequences,20)
 
 # 搭建模型
 class PoemRNN(nn.Module):
@@ -66,13 +70,13 @@ def train(model,dataset,lr,epochs,batch_size,device):
         for X, y in data_loader:
             X, y = X.to(device), y.to(device)
             output,_ = model(X)
-            output = output.view(-1, output.shape[-1])
-            loss = loss_func(output, y.view(-1))
+            # output = output.view(-1, output.shape[-1])
+            loss = loss_func(output.view(-1, output.shape[-1]), y.view(-1))
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
             train_total_loss += loss.item() * X.shape[0]
-        train_avg_loss = train_total_loss / len(data_loader)
+        train_avg_loss = train_total_loss / len(dataset)
         train_loss_list.append(train_avg_loss)
 
         model.eval()
@@ -81,12 +85,11 @@ def train(model,dataset,lr,epochs,batch_size,device):
             for X, y in data_loader:
                 X, y = X.to(device), y.to(device)
                 output,_ = model(X)
-                output = output.view(-1, output.shape[-1])
-                loss = loss_func(output, y.view(-1))
+                loss = loss_func(output.view(-1, output.shape[-1]), y.view(-1))
                 test_total_loss += loss.item() * X.shape[0]
-        test_avg_loss = test_total_loss / len(data_loader)
+        test_avg_loss = test_total_loss / len(dataset)
         test_loss_list.append(test_avg_loss)
-        print(f"epoch: {epoch + 1},train loss: {train_avg_loss:.6f}, test acc: {test_avg_loss:.6f}")
+        print(f"epoch: {epoch + 1},train loss: {train_avg_loss:.6f}, test loss: {test_avg_loss:.6f}")
     return train_loss_list, test_loss_list
 
 train(model=model, dataset=dataset, lr=1e-3, epochs=20, batch_size=32, device=device)
