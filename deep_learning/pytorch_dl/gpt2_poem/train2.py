@@ -1,5 +1,4 @@
 from torch.optim import AdamW
-# 导入transformers库中的优化器调度器获取函数
 from transformers.optimization import get_scheduler
 import torch
 import swanlab
@@ -16,6 +15,7 @@ swanlab.init(
 # 实例化自定义数据集
 dataset = MyDataset()
 
+# 创建模型
 tokenizer = AutoTokenizer.from_pretrained(r"/Users/zhangyf/PycharmProjects/train/llm_related/gpt2")
 model = GPT2LMHeadModel.from_pretrained(r"/Users/zhangyf/PycharmProjects/train/llm_related/gpt2")
 
@@ -30,49 +30,49 @@ def collate_fn(data):
                                        return_tensors='pt')  # 返回PyTorch张量
 
     data['labels'] = data['input_ids'].clone()
-
     return data
 
 # 创建数据加载器，用于批量加载数据
-loader = torch.utils.data.DataLoader(
-    dataset=dataset,  # 指定数据集
-    batch_size=6,  # 指定批量大小
-    collate_fn=collate_fn,  # 指定预处理函数
-    shuffle=True,  # 打乱数据
-    drop_last=False,  # 如果最后一个批次不足，则丢弃
+train_loader = torch.utils.data.DataLoader(
+    dataset=dataset,
+    batch_size=6,
+    collate_fn=collate_fn,
+    shuffle=True,
 )
 
 # 定义训练函数
 def train():
     global model
-
+    accumulation_steps = 8
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = model.to(device)
     optimizer = AdamW(model.parameters(), lr=2e-5)
     # 获取优化器调度器
+
     scheduler = get_scheduler(name='cosine',  # 线性调度器
                               num_warmup_steps=0,  # 预热步数
-                              num_training_steps=len(loader),  # 总训练步数
+                              num_training_steps=len(train_loader),  # 总训练步数
                               optimizer=optimizer)
 
     # 设置模型为训练模式
     model.train()
-    for i, data in enumerate(loader):
+    for step, data in enumerate(train_loader):
         for k in data.keys():
             data[k] = data[k].to(device)
         out = model(**data)
-        loss = out['loss']
+        # 梯度缩放
+        loss = out['loss'] / accumulation_steps
         loss.backward()
-        # 梯度裁剪，防止梯度爆炸
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-
-        optimizer.step()
-        scheduler.step()
-        optimizer.zero_grad()
-        model.zero_grad()
-
+        # 梯度累积
+        if step % accumulation_steps == 0:
+            # 梯度裁剪，防止梯度爆炸
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            optimizer.step()
+            scheduler.step()
+            optimizer.zero_grad()
+            model.zero_grad()
         # 每隔50个批次打印一次训练信息
-        if i % 50 == 0:
+        if step % 50 == 0:
             # 准备标签和输出用于计算准确率
             labels = data['labels'][:, 1:]
             #通过‘logits’获取模型的原始输出值
@@ -92,12 +92,13 @@ def train():
 
             # 打印批次索引、损失、学习率和准确率
             swanlab.log({"loss": loss, "accuracy": accuracy, "lr": lr})
-            print(i, loss.item(),lr, accuracy)
+            print(step, loss.item(), lr, accuracy)
     # 保存模型参数，不保存模型结构
     # torch.save(model.state_dict(), 'net.pt')
     # print("权重保存成功！")
 if __name__ == '__main__':
-    for epoch in range(1000):
+    epochs = 10
+    for epoch in range(epochs):
         train()
         # 保存模型参数，不保存模型结构
         torch.save(model.state_dict(), f'net_{epoch}.pt')
