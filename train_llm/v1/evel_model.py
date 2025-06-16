@@ -11,14 +11,14 @@ warnings.filterwarnings('ignore')
 
 
 def init_model(args):
-    tokenizer = AutoTokenizer.from_pretrained('/home/bmh/project/llm_related/train_llm/model/tokenizer')
+    tokenizer = AutoTokenizer.from_pretrained('/Users/zhangyf/PycharmProjects/train/llm_related/train_llm/v1/model/tokenizer')
     if args.load == 0:
         moe_path = '_moe' if args.use_moe else ''
         modes = {0: 'pretrain', 1: 'full_sft', 2: 'rlhf', 3: 'reason', 4: 'grpo'}
         # model_path = f'/home/bmh/project/llm_related/train_llm/model/{args.out_dir}/{modes[args.model_mode]}/{args.model_name}'
         AutoConfig.register("minimind", LMConfig)
         AutoModelForCausalLM.register(LMConfig, MiniMindLM)
-        model = AutoModelForCausalLM.from_pretrained("/home/bmh/project/llm_related/train_llm/model/save/pretrain/moe_epoch10/checkpoint-200")
+        model = AutoModelForCausalLM.from_pretrained("/Users/zhangyf/PycharmProjects/train/llm_related/train_llm/v1/model/save/minimind_base_pre")
         # model = AutoModelForCausalLM.from_pretrained(model_path)
     else:
         transformers_model_path = './MiniMind2'

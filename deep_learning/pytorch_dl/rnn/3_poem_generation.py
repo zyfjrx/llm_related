@@ -64,7 +64,6 @@ def train(model,dataset,lr,epochs,batch_size,device):
     loss_func = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     train_loss_list = []
-    test_loss_list = []
     for epoch in range(epochs):
         train_total_loss = 0
         for X, y in data_loader:
@@ -78,19 +77,35 @@ def train(model,dataset,lr,epochs,batch_size,device):
             train_total_loss += loss.item() * X.shape[0]
         train_avg_loss = train_total_loss / len(dataset)
         train_loss_list.append(train_avg_loss)
+        print(f"epoch: {epoch + 1},train loss: {train_avg_loss:.6f}")
+    return train_loss_list
 
-        model.eval()
-        with torch.no_grad():
-            test_total_loss = 0
-            for X, y in data_loader:
-                X, y = X.to(device), y.to(device)
-                output,_ = model(X)
-                loss = loss_func(output.view(-1, output.shape[-1]), y.view(-1))
-                test_total_loss += loss.item() * X.shape[0]
-        test_avg_loss = test_total_loss / len(dataset)
-        test_loss_list.append(test_avg_loss)
-        print(f"epoch: {epoch + 1},train loss: {train_avg_loss:.6f}, test loss: {test_avg_loss:.6f}")
-    return train_loss_list, test_loss_list
-
-train(model=model, dataset=dataset, lr=1e-3, epochs=20, batch_size=32, device=device)
+train(model=model, dataset=dataset, lr=1e-3, epochs=2, batch_size=32, device=device)
 torch.save(model.state_dict(), 'poems.pth')
+
+def generate(model,word2idx,vocab,start_token,line_num=4,line_len=7):
+    model.eval()
+    poem = []
+    current_line_len = line_len
+    start_token = word2idx.get(start_token,word2idx["<UNK>"])
+    if start_token != word2idx["<UNK>"]:
+        poem.append(vocab[start_token])
+        current_line_len -= 1
+    # 神经网络输入 [1,1] ,b,L
+    input = torch.LongTensor([[start_token]]).to(device)
+    with torch.no_grad():
+        for _ in range(line_num):
+            for interpunction in ["，","。\n"]:
+                while current_line_len > 0:
+                    output,_ = model(input)
+                    prob = torch.softmax(output[:,-1,:],dim=-1)
+                    next_token = torch.multinomial(prob,1)
+                    poem.append(vocab[next_token.item()])
+                    input = torch.cat((input,next_token),dim=1)
+                    current_line_len -= 1
+                current_line_len = line_len
+                poem.append(interpunction)
+
+        return "".join(poem)
+print(generate(model,word2idx,vocab,start_token="一",line_num=4,line_len=7))
+
