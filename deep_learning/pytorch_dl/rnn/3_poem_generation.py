@@ -80,7 +80,7 @@ def train(model,dataset,lr,epochs,batch_size,device):
         print(f"epoch: {epoch + 1},train loss: {train_avg_loss:.6f}")
     return train_loss_list
 
-train(model=model, dataset=dataset, lr=1e-3, epochs=2, batch_size=32, device=device)
+train(model=model, dataset=dataset, lr=1e-3, epochs=20, batch_size=32, device=device)
 torch.save(model.state_dict(), 'poems.pth')
 
 def generate(model,word2idx,vocab,start_token,line_num=4,line_len=7):
@@ -107,5 +107,5 @@ def generate(model,word2idx,vocab,start_token,line_num=4,line_len=7):
                 poem.append(interpunction)
 
         return "".join(poem)
-print(generate(model,word2idx,vocab,start_token="一",line_num=4,line_len=7))
+print(generate(model,word2idx,vocab,start_token="山",line_num=4,line_len=7))
 
