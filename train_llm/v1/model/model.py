@@ -333,7 +333,7 @@ class MiniMindLM(PreTrainedModel):
 
     @torch.inference_mode()
     def generate(self, input_ids, eos_token_id=2, max_new_tokens=1024, temperature=0.75, top_p=0.90,
-                 stream=False, rp=1., use_cache=True, pad_token_id=0, num_return_sequences=1, **args):
+                 stream=False, rp=1., use_cache=True, pad_token_id=0, num_return_sequences=2, **args):
         # 流式生成
         if stream:
             return self._stream(input_ids, eos_token_id, max_new_tokens, temperature, top_p, rp, use_cache, **args)

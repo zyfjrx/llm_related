@@ -50,6 +50,7 @@ print(X_train.shape, X_test.shape)
 # 使用KNN进行二分类
 # knn = KNeighborsClassifier(n_neighbors=3)
 knn = KNeighborsClassifier()
+knn.kneighbors()
 # 网格搜索确定最优超参数
 param_grid = {"n_neighbors": list(range(1, 11))}
 knn = GridSearchCV(estimator=knn, param_grid=param_grid, cv=10)

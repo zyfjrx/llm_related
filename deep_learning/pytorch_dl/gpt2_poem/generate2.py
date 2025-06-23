@@ -1,20 +1,18 @@
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, GPT2LMHeadModel
+
 device = torch.device('mps' if torch.mps.is_available() else 'cpu')
 tokenizer = AutoTokenizer.from_pretrained(r"/Users/zhangyf/PycharmProjects/train/llm_related/gpt2")
-model = AutoModelForCausalLM.from_pretrained(r"/Users/zhangyf/PycharmProjects/train/llm_related/gpt2")
+model = GPT2LMHeadModel.from_pretrained(r"/Users/zhangyf/PycharmProjects/train/llm_related/gpt2")
 
 # 加载自己训练的模型权重
 model.load_state_dict(torch.load("./net_7.pt", map_location=device))
 model.to(device)
 
 
-# 定制化pipline工具生成五言绝句内容
-# text提示词、row是生成文本行数、col是每行的字符数
 def generate(text, row, col):
-    # 定义一个内部递归函数用于生成文本
     def generate_loop(data):
-        # 禁用梯度计算
+
         with torch.no_grad():
             # 使用data中的字典数据作为输入，并获得输出
             out = model(**data)
