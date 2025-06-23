@@ -68,7 +68,7 @@ def train(model,dataset,lr,epochs,batch_size,device):
         train_total_loss = 0
         for X, y in data_loader:
             X, y = X.to(device), y.to(device)
-            output,_ = model(X)
+            output,hx = model(X)
             # output = output.view(-1, output.shape[-1])
             loss = loss_func(output.view(-1, output.shape[-1]), y.view(-1))
             loss.backward()
