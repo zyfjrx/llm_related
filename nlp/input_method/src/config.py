@@ -12,8 +12,8 @@ LOG_DIR = ROOT_DIR / 'logs'
 
 # 训练参数
 SEQ_LEN = 5  # 输入序列长度
-BATCH_SIZE = 64  # 批大小
-EMBEDDING_DIM = 64  # 嵌入层维度
-HIDDEN_SIZE = 128  # RNN 隐藏层维度
+BATCH_SIZE = 128  # 批大小
+EMBEDDING_DIM = 128  # 嵌入层维度
+HIDDEN_SIZE = 256  # RNN 隐藏层维度
 LEARNING_RATE = 1e-3  # 学习率
 EPOCHS = 30  # 训练轮数

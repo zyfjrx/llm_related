@@ -21,7 +21,7 @@ def build_dataset(sentences,word2index):
 def process():
     print("开始处理数据")
 
-    df = pd.read_json(config.RAW_DATA_DIR / 'synthesized_.jsonl',lines=True,orient='records')
+    df = pd.read_json(config.RAW_DATA_DIR / 'synthesized_.jsonl',lines=True,orient='records').sample(frac=0.1)
     print(df.head())
     # 抽取数据
     sentences = []
@@ -42,6 +42,11 @@ def process():
             vocab_set.add(word)
     vocab_list = ['<UNK>'] + list(vocab_set)
     print(f"词表大小: {len(vocab_list)}")
+    # 保存词表
+    with open(config.PROCESSED_DATA_DIR / 'vocab.txt', 'w', encoding='utf-8') as f:
+        for word in vocab_list:
+            f.write(word + '\n')
+
 
     word2index = {word:index for index, word in enumerate(vocab_list)}
     # 构建并保存训练数据
