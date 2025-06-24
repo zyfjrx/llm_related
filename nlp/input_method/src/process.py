@@ -21,7 +21,7 @@ def build_dataset(sentences,word2index):
 def process():
     print("开始处理数据")
 
-    df = pd.read_json(config.RAW_DATA_DIR / 'synthesized_.jsonl',lines=True,orient='records').sample(frac=0.1)
+    df = pd.read_json(config.RAW_DATA_DIR / 'synthesized_.jsonl',lines=True,orient='records').sample(frac=0.01)
     print(df.head())
     # 抽取数据
     sentences = []

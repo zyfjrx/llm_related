@@ -35,17 +35,19 @@ def train():
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
 
-    min_loss = float('inf')
+    best_loss = float('inf')
     writer = SummaryWriter(log_dir=config.LOG_DIR / time.strftime("%Y%m%d-%H%M%S"))
     for epoch in range(1,config.EPOCHS+1):
         print(f"========== epoch {epoch} ==========")
         avg_loss = train_one_epoch(dataloader, model, loss_fn, optimizer, device)
-        if avg_loss < min_loss:
-            print("误差减小了，保存模型 ...")
-            min_loss = avg_loss
-            torch.save(model.state_dict(), config.MODELS_DIR / 'model.pt')
         writer.add_scalar('train/loss', avg_loss, epoch)
         print(f"avg_loss: {avg_loss}")
+        if avg_loss < best_loss:
+            print("误差减小了，保存模型 ...")
+            best_loss = avg_loss
+            torch.save(model.state_dict(), config.MODELS_DIR / 'model.pt')
+        else:
+            print("无需保存模型 ...")
     writer.close()
 
 
