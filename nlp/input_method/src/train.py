@@ -6,7 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 from dataset import get_dataloader
 from model import InputMethodModel
 import config
-
+from tokenizer import JiebaTokenizer
 
 def train_one_epoch(dataloader, model, loss_fn, optimizer, device):
     model.train()
@@ -29,11 +29,10 @@ def train():
     print("数据集加载完成")
 
     # 加载词表
-    with open(config.PROCESSED_DATA_DIR / 'vocab.txt', 'r', encoding='utf-8') as f:
-        vocab_list = [line.strip() for line in f.readlines()]
-    model = InputMethodModel(vocab_size=len(vocab_list)).to(device)
+    tokenizer = JiebaTokenizer.from_vocab(config.PROCESSED_DATA_DIR / 'vocab.txt')
+    model = InputMethodModel(vocab_size=tokenizer.vocab_size).to(device)
     loss_fn = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=config.LEARNING_RATE)
 
     best_loss = float('inf')
     writer = SummaryWriter(log_dir=config.LOG_DIR / time.strftime("%Y%m%d-%H%M%S"))

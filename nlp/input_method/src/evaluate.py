@@ -4,7 +4,7 @@ from predict import predict_batch
 import config
 from model import InputMethodModel
 from dataset import get_dataloader
-
+from tokenizer import JiebaTokenizer
 
 def evaluate_model(model, dataloader, device):
     total_count = 0
@@ -27,9 +27,8 @@ def run_evaluate():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"设备: {device}")
     # 加载词表
-    with open(config.PROCESSED_DATA_DIR / 'vocab.txt', 'r', encoding='utf-8') as f:
-        vocab_list = [line.strip() for line in f.readlines()]
-    model = InputMethodModel(vocab_size=len(vocab_list))
+    tokenizer = JiebaTokenizer.from_vocab(config.PROCESSED_DATA_DIR / 'vocab.txt')
+    model = InputMethodModel(vocab_size=tokenizer.vocab_size)
     model.load_state_dict(torch.load(config.MODELS_DIR / 'model.pt'))
     model.to(device)
     dataloader = get_dataloader(train=False)
