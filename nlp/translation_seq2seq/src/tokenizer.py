@@ -88,6 +88,8 @@ class EnglishTokenizer(BaseTokenizer):
 
 
 if __name__ == '__main__':
-    tokenizer = BaseTokenizer.from_vocab(config.PROCESSED_DATA_DIR / 'vocab.txt')
+    tokenizer = ChineseTokenizer.from_vocab(config.PROCESSED_DATA_DIR / 'vocab_zh.txt')
+    print(tokenizer.encode("我喜欢坐 地铁".strip(), 10, add_special_tokens=False))
+    print(jieba.lcut("我喜欢坐 地铁"))
     # word_list = tokenizer.encode("我喜欢坐地铁", )
     # print(word_list)
