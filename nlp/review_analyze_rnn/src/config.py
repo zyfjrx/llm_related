@@ -17,4 +17,3 @@ EMBEDDING_DIM = 128  # 嵌入层维度
 HIDDEN_SIZE = 256  # RNN 隐藏层维度
 LEARNING_RATE = 1e-3  # 学习率
 EPOCHS = 30  # 训练轮数
-NUM_LAYERS = 2
