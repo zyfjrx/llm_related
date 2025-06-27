@@ -84,7 +84,7 @@ class EnglishTokenizer(BaseTokenizer):
 
     def decode(self,word_ids):
         word_list = [self.index2word[word_id] for word_id in word_ids]
-        return TreebankWordDetokenizer.detokenize(word_list)
+        return TreebankWordDetokenizer().detokenize(word_list)
 
 
 if __name__ == '__main__':

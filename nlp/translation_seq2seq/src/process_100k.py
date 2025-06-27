@@ -5,8 +5,10 @@ from tokenizer import ChineseTokenizer,EnglishTokenizer
 def process():
     print("开始处理数据")
     # 读取数据
-    df = pd.read_csv(config.RAW_DATA_DIR / 'cmn.txt',header=None,sep='\t',usecols=[0,1],names=['en', 'zh'],encoding='utf-8')
-
+    df = pd.DataFrame(columns=['en', 'zh'])
+    df['en'] = pd.read_csv(config.RAW_DATA_DIR / 'train.en',header=None,sep='\t',usecols=[0],encoding='utf-8')
+    df['zh'] = pd.read_csv(config.RAW_DATA_DIR / 'train.zh',header=None,sep='\t',usecols=[0],encoding='utf-8')
+    print(df.head())
     # 过滤空值
     df = df.dropna()
     df = df[df['en'].str.strip().ne('') & df['zh'].str.strip().ne('')]
