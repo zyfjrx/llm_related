@@ -1,6 +1,24 @@
 import torch
 import torch.nn as nn
 import config
+import math
+
+class PositionEncoding(nn.Module):
+    def __init__(self, dim_model,max_len=100):
+        super().__init__()
+        self.pe = torch.zeros(max_len, dim_model,dtype=torch.float32)
+        for pos in range(max_len):
+            for _2i in range(0, dim_model, 2):
+                self.pe[pos, _2i] = math.sin(pos / (10000.0 ** (_2i / dim_model)))
+                self.pe[pos, _2i + 1] = math.cos(pos / (10000.0 ** (_2i / dim_model)))
+
+    def forward(self, x):
+        return x + self.pe[:x.shape[1]]
+
+
+
+
+
 
 
 class Attention(nn.Module):
@@ -74,3 +92,8 @@ class TranslationDecoder(nn.Module):
         output = self.linear(combined)
         # output.shape [batch_size,1, vocab_size]
         return output, hidden_n
+
+
+if __name__ == '__main__':
+    pose = PositionEncoding(512,128)
+    pose(torch.randn(32,128,512))
