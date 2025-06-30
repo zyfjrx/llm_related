@@ -26,8 +26,6 @@ def train_one_epoch(train_dataloader, model, loss_fn, optimizer, device):
         tgt_mask = model.transformer.generate_square_subsequent_mask(decoder_input.size(1)).to(device)
         tgt_pad_mask = decoder_input.eq(model.tgt_embedding.padding_idx)
         # output[batch_size,seq_len-1,vocab_size]
-        tt = model.encode(inputs, src_pad_mask)
-        print(tt)
         output = model(inputs, decoder_input,src_pad_mask, tgt_mask, tgt_pad_mask)
 
         # 计算损失
