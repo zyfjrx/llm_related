@@ -7,45 +7,31 @@ from tqdm import tqdm
 
 import config
 from dataset import get_dataloader
-from model import TranslationEncoder, TranslationDecoder
+from model import TranslationModel
 from tokenizer import ChineseTokenizer, EnglishTokenizer
 
 
-def train_one_epoch(train_dataloader, encoder, decoder, loss_fn, optimizer, device):
-    encoder.train()
-    decoder.train()
+def train_one_epoch(train_dataloader, model, loss_fn, optimizer, device):
+    model.train()
     epoch_total_loss = 0
     for inputs, targets in tqdm(train_dataloader, desc='train'):
         # inputs:[batch_size,seq_len] targets:[batch_size,seq_len]
         inputs, targets = inputs.to(device), targets.to(device)
-        # 编码
-        # context_vector.shape[batch_size,decoder_hidden_size]
-        encoder_outputs, context_vector = encoder(inputs)
-        # 解码
-        # decoder_input.shape: [batch_size, 1]
-        decoder_input = targets[:, 0:1]
-        # context_vector.shape[1,batch_size,decoder_hidden_size]
-        decoder_hidden = context_vector.unsqueeze(0)
-        decoder_outputs = []
-        for t in range(1, targets.shape[1]):
-            # decoder_output.shape: [batch_size, 1, vocab_size]
-            decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
-            decoder_outputs.append(decoder_output)
-            decoder_input = targets[:, t:t + 1]
-        # 预测结果
-        # decoder_outputs.shape: [batch_size, seq_len - 1, vocab_size]
-        decoder_outputs = torch.cat(decoder_outputs, dim=1)
-        # decoder_outputs.shape: [batch_size*(seq_len - 1), vocab_size]
-        decoder_outputs = decoder_outputs.reshape(-1, decoder_outputs.shape[-1])
-
-        # 真实值
-        # targets: [batch_size, seq_len-1]
-        targets = targets[:, 1:]
-        # targets: [batch_size*(seq_len - 1)]
-        targets = targets.reshape(-1)
+        # decoder_input[batch_size,seq_len-1]
+        decoder_input = targets[:, :-1]
+        # decoder_target[batch_size,seq_len-1]
+        decoder_target = targets[:, 1:]
+        # src_pad_mask
+        src_pad_mask = inputs.eq(model.src_embedding.padding_idx)
+        tgt_mask = model.transformer.generate_square_subsequent_mask(decoder_input.size(1)).to(device)
+        tgt_pad_mask = decoder_input.eq(model.tgt_embedding.padding_idx)
+        # output[batch_size,seq_len-1,vocab_size]
+        tt = model.encode(inputs, src_pad_mask)
+        print(tt)
+        output = model(inputs, decoder_input,src_pad_mask, tgt_mask, tgt_pad_mask)
 
         # 计算损失
-        loss = loss_fn(decoder_outputs, targets)
+        loss = loss_fn(output.reshape(-1, output.shape[-1]), decoder_target.reshape(-1))
         epoch_total_loss += loss.item()
         loss.backward()
         optimizer.step()
@@ -60,17 +46,17 @@ def train():
     zh_tokenizer = ChineseTokenizer.from_vocab(config.PROCESSED_DATA_DIR / 'vocab_zh.txt')
 
     # 模型
-    encoder = TranslationEncoder(vocab_size=zh_tokenizer.vocab_size,
-                                 padding_idx=zh_tokenizer.pad_token_id).to(device)
-    decoder = TranslationDecoder(vocab_size=en_tokenizer.vocab_size,
-                                 padding_idx=en_tokenizer.pad_token_id).to(device)
+    model =  TranslationModel(zh_vocab_size=zh_tokenizer.vocab_size,
+                               en_vocab_size=en_tokenizer.vocab_size,
+                               zh_padding_idx=zh_tokenizer.pad_token_id,
+                               en_padding_idx=en_tokenizer.pad_token_id).to(device)
 
     # 训练数据
     train_dataloader = get_dataloader(train=True)
 
     # 损失函数、优化器
     loss_fn = torch.nn.CrossEntropyLoss(ignore_index=en_tokenizer.pad_token_id)
-    optimizer = torch.optim.AdamW(params=chain(encoder.parameters(), decoder.parameters()), lr=config.LEARNING_RATE)
+    optimizer = torch.optim.AdamW(params=model.parameters(), lr=config.LEARNING_RATE)
 
     # tensorboard
     writer = SummaryWriter(log_dir=config.LOG_DIR / time.strftime("%Y%m%d-%H%M%S"))
@@ -79,14 +65,13 @@ def train():
     best_loss = float('inf')
     for epoch in range(1, config.EPOCHS + 1):
         print(f"========== epoch {epoch} ==========")
-        avg_loss = train_one_epoch(train_dataloader, encoder, decoder, loss_fn, optimizer, device)
+        avg_loss = train_one_epoch(train_dataloader, model, loss_fn, optimizer,device)
         writer.add_scalar('train/loss', avg_loss, epoch)
         print(f"avg_loss: {avg_loss}")
         if avg_loss < best_loss:
             print("误差减小了，保存模型 ...")
             best_loss = avg_loss
-            torch.save(encoder.state_dict(), config.MODELS_DIR / 'encoder_model.pt')
-            torch.save(decoder.state_dict(), config.MODELS_DIR / 'decoder_model.pt')
+            torch.save(model.state_dict(), config.MODELS_DIR / 'model.pt')
             print("保存成功")
         else:
             print("无需保存模型 ...")
