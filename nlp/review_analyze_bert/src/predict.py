@@ -4,34 +4,29 @@ import torch
 import config
 from tokenizer import JiebaTokenizer
 from model import ReviewAnalyzeModel
-
+from transformers import AutoTokenizer,AutoModel
 jieba.setLogLevel(jieba.logging.WARNING)
 
-def predict_batch(model, input_ids):
-    """
-    批量预测
-    :param model:
-    :param input_ids: 输入张量:[batch_size,seq_len]
-    :return:
-    """
+def predict_batch(model, input_ids,attention_mask):
     model.eval()
     with torch.no_grad():
-        output = model(input_ids) # output.shape [batch_size]
+        output = model(input_ids,attention_mask) # output.shape [batch_size]
     return torch.sigmoid(output).tolist()
 
 
 def predict(user_input, model, tokenizer, device):
-    input_ids = tokenizer.encode(user_input,config.SEQ_LEN)
-    input_ids = torch.tensor([input_ids]).to(device)
-    batch_result = predict_batch(model, input_ids)
+    tokenized = tokenizer([user_input],max_length=config.SEQ_LEN,truncation=True,padding='max_length',return_tensors='pt')
+    input_ids = tokenized["input_ids"].to(device)
+    attention_mask = tokenized['attention_mask'].to(device)
+    batch_result = predict_batch(model, input_ids, attention_mask)
     return batch_result[0]
 
 
 def run_predict():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"设备: {device}")
-    tokenizer = JiebaTokenizer.from_vocab(config.PROCESSED_DATA_DIR / 'vocab.txt')
-    model = ReviewAnalyzeModel(vocab_size=tokenizer.vocab_size,padding_idx=tokenizer.pad_token_id)
+    tokenizer = AutoTokenizer.from_pretrained(config.PRETRAINED_MODELS_DIR)
+    model = ReviewAnalyzeModel()
     model.load_state_dict(torch.load(config.MODELS_DIR / 'model.pt'))
     model.to(device)
 

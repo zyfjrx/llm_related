@@ -1,31 +1,33 @@
-import pandas as pd
 import config
-from sklearn.model_selection import train_test_split
-from tokenizer import JiebaTokenizer
-
+from datasets import load_dataset, ClassLabel
+from transformers import AutoTokenizer
 
 def process():
     print("开始处理数据")
-    df = pd.read_csv(config.RAW_DATA_DIR / 'online_shopping_10_cats.csv',usecols=['review','label'],encoding='utf-8')
-    df = df.dropna()
-
+    # 读取数据
+    dataset = load_dataset('csv', data_files=str(config.RAW_DATA_DIR / 'online_shopping_10_cats.csv'))['train']
+    # 过滤数据
+    dataset = dataset.remove_columns(['cat'])
+    dataset = dataset.filter(lambda x: x['review'] is not None)
+    print(dataset.features)
     # 划分数据集
-    train_df, test_df = train_test_split(df, test_size=0.2,stratify=df['label'])
-    print(len(train_df))
+    dataset = dataset.cast_column('label', ClassLabel(num_classes=2))
+    print(dataset.features)
+    dataset_dict = dataset.train_test_split(test_size=0.2, stratify_by_column='label')
+    print(dataset_dict)
 
-    # 构建词表
-    JiebaTokenizer.build_vocab(train_df['review'].tolist(), config.PROCESSED_DATA_DIR / 'vocab.txt')
+
     # 构建tokenizer
-    tokenizer = JiebaTokenizer.from_vocab(config.PROCESSED_DATA_DIR / 'vocab.txt')
+    tokenizer = AutoTokenizer.from_pretrained('/Users/zhangyf/llm/bert-base-chinese')
 
     # 构建训练数据
-    train_df['review'] = train_df['review'].apply(lambda x: tokenizer.encode(x, config.SEQ_LEN))
-    # print(train_df['review'].apply(lambda x: len(x)).quantile(0.95))
-    train_df.to_json(config.PROCESSED_DATA_DIR / 'train.jsonl', lines=True,orient='records')
+    def batch_fn(batch):
+        return tokenizer(batch['review'], truncation=True, padding='max_length', max_length=config.SEQ_LEN)
+    dataset = dataset_dict.map(batch_fn, batched=True,remove_columns=['review'])
+    dataset = dataset.remove_columns('token_type_ids')
+    dataset['train'].save_to_disk(config.PROCESSED_DATA_DIR / 'train')
+    dataset['test'].save_to_disk(config.PROCESSED_DATA_DIR / 'test')
 
-    # 构建测试数据
-    test_df['review'] = test_df['review'].apply(lambda x: tokenizer.encode(x,config.SEQ_LEN ))
-    test_df.to_json(config.PROCESSED_DATA_DIR / 'test.jsonl', lines=True,orient='records')
 
     print("数据处理完成")
 

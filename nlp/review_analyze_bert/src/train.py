@@ -7,15 +7,17 @@ from tqdm import tqdm
 import config
 from dataset import get_dataloader
 from model import ReviewAnalyzeModel
-from tokenizer import JiebaTokenizer
+
 
 
 def train_one_epoch(dataloader, model, loss_fn, optimizer, device):
     model.train()
     total_loss = 0
-    for inputs, targets in tqdm(dataloader, desc='train'):
-        inputs,targets = inputs.to(device),targets.to(device) # inputs:[batch_size,seq_len] targets:[batch_size]
-        output = model(inputs) # output:[batch_size,1]
+    for batch in tqdm(dataloader, desc='train'):
+        input_ids = batch['input_ids'].to(device)  # [batch_size, seq_len]
+        attention_mask = batch['attention_mask'].to(device)  # [batch_size, seq_len]
+        targets = batch['label'].to(device, dtype=torch.float)  # [batch_size]
+        output = model(input_ids, attention_mask) # output:[batch_size,1]
         loss = loss_fn(output, targets)
         total_loss += loss
         loss.backward()
@@ -28,9 +30,7 @@ def train_one_epoch(dataloader, model, loss_fn, optimizer, device):
 def train():
     device = torch.device('mps' if torch.mps.is_available() else 'cpu')
 
-    # 加载词表
-    tokenizer = JiebaTokenizer.from_vocab(config.PROCESSED_DATA_DIR / 'vocab.txt')
-    model = ReviewAnalyzeModel(vocab_size=tokenizer.vocab_size,padding_idx=tokenizer.pad_token_id).to(device)
+    model = ReviewAnalyzeModel().to(device)
     dataloader = get_dataloader()
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.LEARNING_RATE)
