@@ -16,7 +16,7 @@ def train_one_epoch(dataloader, model, loss_fn, optimizer, device):
         # inputs:[batch_size,seq_len] labels:[batch_size]
         input_ids = data['input_ids'].to(device)
         attention_mask = data['attention_mask'].to(device)
-        labels = data['label'].to(device, dtype=torch.float32)
+        labels = data['label'].to(device)
         # outputs.shape[batch_size,num_class]
         outputs = model(input_ids=input_ids, attention_mask=attention_mask)
         # 获取损失
