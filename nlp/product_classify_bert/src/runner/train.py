@@ -41,7 +41,7 @@ def run_one_epoch(dataloader, model, loss_fn, optimizer, device, scaler,is_train
     model.train() if is_train else model.eval()
     epoch_total_loss = 0
     with torch.set_grad_enabled(is_train):
-        for data in tqdm(dataloader, desc='train'):
+        for data in tqdm(dataloader, desc='train'if is_train else 'valid'):
             # inputs:[batch_size,seq_len] labels:[batch_size]
             input_ids = data['input_ids'].to(device)
             attention_mask = data['attention_mask'].to(device)
