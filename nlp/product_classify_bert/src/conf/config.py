@@ -12,9 +12,9 @@ MODELS_DIR = ROOT_DIR / 'models'
 LOG_DIR = ROOT_DIR / 'logs'
 
 # 训练参数
-SEQ_LEN = 64  # 输入序列长度
+SEQ_LEN = 50  # 输入序列长度
 BATCH_SIZE = 32  # 批大小
-LEARNING_RATE = 1e-3  # 学习率
+LEARNING_RATE = 1e-5  # 学习率
 EPOCHS = 30  # 训练轮数
 NUM_CLASS = 30
 
