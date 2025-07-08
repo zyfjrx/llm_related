@@ -1,0 +1,10 @@
+curl http://localhost:8001/v1/chat/completions -H "Content-Type: application/json" -d '{
+  "model": "Qwen3-14B-sft",
+  "messages": [
+    {"role": "user", "content": "狗需要打那些疫苗？"}
+  ],
+  "temperature": 0.6,
+  "top_p": 0.95,
+  "top_k": 20,
+  "max_tokens": 32768
+}'
