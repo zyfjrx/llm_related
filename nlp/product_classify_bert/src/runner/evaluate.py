@@ -20,12 +20,11 @@ def evaluate(model, dataloader, device,metrics):
     for batch in tqdm(dataloader, desc='evaluate'):
         input_ids = batch['input_ids'].to(device)
         attention_mask = batch['attention_mask'].to(device)
-        targets = batch['label'].to(device)
-        with torch.no_grad():
-            outputs = model(input_ids=input_ids,attention_mask=attention_mask)
-            preds = torch.argmax(outputs, dim=-1)
-        all_labels.extend(targets.tolist())
-        all_preds.extend(preds.tolist())
+        targets = batch['label'].tolist()
+        predict_result = predict_batch(model, input_ids, attention_mask)
+
+        all_labels.extend(targets)
+        all_preds.extend(predict_result)
     results = {}
     for metric in metrics:
         if metric == Metric.ACCURACY:

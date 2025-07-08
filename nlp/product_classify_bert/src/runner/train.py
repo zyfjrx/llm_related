@@ -23,9 +23,9 @@ class EarlyStopping:
         self.early_stop = False
 
     def __call__(self, val_loss, model):
-        score = -val_loss
-        if self.best_score is None or score > self.best_score:
-            self.best_score = score
+
+        if val_loss < self.best_score:
+            self.best_score = val_loss
             self.counter = 0
             self.save_model(model)
         else:
