@@ -85,11 +85,11 @@ class Trainer:
                         self.writer.add_scalar('train_loss', loss.item(), self.global_step)
                     self.global_step += 1
 
-                    if (self.checkpoint_step
-                            and self.global_step % self.checkpoint_step == 0
-                    ):
-                        checkpoint_path = str(self.model_params_path) + ".checkpoint"
-                        torch.save(self.model.state_dict(), checkpoint_path)
+                    # if (self.checkpoint_step
+                    #         and self.global_step % self.checkpoint_step == 0
+                    # ):
+                    #     checkpoint_path = str(self.model_params_path) + ".checkpoint"
+                    #     torch.save(self.model.state_dict(), checkpoint_path)
                 current_batch_size = inputs["input_ids"].shape[0]
                 total_loss += loss.item() * current_batch_size
                 total_examples += current_batch_size

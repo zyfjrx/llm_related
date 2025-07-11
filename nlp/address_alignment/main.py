@@ -26,7 +26,6 @@ def model_go(train=None, test=None, inference=None, model_params_path=None):
             "train": processor.get_dataloader("train"),
             "valid": processor.get_dataloader("valid"),
         }
-        model_params_path = config.FINETUNED_DIR / f"{save_name}.pt"
         trainer(dataloader, model_params_path, writer)
 
     if test:
@@ -35,8 +34,28 @@ def model_go(train=None, test=None, inference=None, model_params_path=None):
 
     if writer:
         writer.close()
+    if inference:
+        res = model.predict(text, device)
+        if isinstance(res, str):
+            print(res)
+        elif isinstance(res, list):
+            for a_text, a_res in zip(text, res):
+                for t, r in zip(a_text, a_res):
+                    print(f"{t}-{r}", end="\t")
+                print("\n")
 
+
+text = [
+    "中国浙江省杭州市余杭区葛墩路27号楼",
+    "北京市通州区永乐店镇27号楼",
+    "北京市市辖区高地街道27号楼",
+    "新疆维吾尔自治区划阿拉尔市金杨镇27号楼",
+    "甘肃省南市文县碧口镇27号楼",
+    "陕西省渭南市华阴市罗镇27号楼",
+    "西藏自治区拉萨市墨竹工卡县工卡镇27号楼",
+    "广州市花都区花东镇27号楼",
+]
 
 
 if __name__ == '__main__':
-    model_go(train=True)
+    model_go(inference=True,model_params_path=config.FINETUNED_DIR / "address_tagging.pt")

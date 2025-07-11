@@ -29,3 +29,38 @@ class AddressTagging(torch.nn.Module):
             loss += self.loss_fn(logits.view(-1,self.num_labels), labels.view(-1))
 
         return {"loss": loss, "logits": logits}
+
+
+    @torch.inference_mode()
+    def predict(self, text: str | list[str], device=torch.device("cpu"), batch_size=32):
+        self.eval()
+        self.to(device)
+
+        res: list[list[str]] = []
+        input_texts = text if isinstance(text, list) else [text]
+        for i in range(0, len(input_texts), batch_size):
+            batch_texts = input_texts[i : i + batch_size]
+            # 将每个字符串拆成字列表：确保 tokenizer 能按字对齐 word_ids
+            batch_words = [list(t) for t in batch_texts]
+            inputs = self.tokenizer(
+                batch_words,
+                is_split_into_words=True,
+                max_length=64,
+                truncation=True,
+                padding=True,
+                return_tensors="pt",
+            ).to(device)
+            outputs = self(inputs["input_ids"], inputs["attention_mask"])
+            preds = torch.argmax(outputs["logits"], dim=-1).detach().cpu()
+            # 处理子词
+            for batch_idx, pred in enumerate(preds):
+                word_ids = inputs.word_ids(batch_index=batch_idx)
+                current_word = None
+                tokens_pred = []
+                for idx, word_id in enumerate(word_ids):
+                    if word_id is not None and word_id != current_word:
+                        current_word = word_id
+                        label = self.label_list[pred[idx].item()]
+                        tokens_pred.append(label[2:])
+                res.append(tokens_pred)
+        return res if isinstance(text, list) else res[0]
