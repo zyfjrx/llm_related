@@ -5,7 +5,7 @@ from pathlib import Path
 MYSQL_CONFIG = {
     "host": "localhost",
     "user": "root",
-    "password": "123321",
+    "password": "123456",
     "database": "region",
     "charset": "utf8mb4",
 }
